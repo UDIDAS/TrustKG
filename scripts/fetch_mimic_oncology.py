@@ -108,13 +108,17 @@ def main():
     if args.dry_run:
         print(sql); return
 
-    key = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
     project = os.environ.get("BQ_PROJECT")
-    if not key or not project:
-        sys.exit("Set GOOGLE_APPLICATION_CREDENTIALS (SA key) and BQ_PROJECT. "
-                 "Use --dry-run to inspect the SQL without auth.")
+    if not project:
+        sys.exit("Set BQ_PROJECT=<your GCP project>. Auth via a service-account key "
+                 "(GOOGLE_APPLICATION_CREDENTIALS) OR `gcloud auth application-default login`. "
+                 "Use --dry-run to inspect the SQL with no auth.")
     from google.cloud import bigquery
-    client = bigquery.Client(project=project)
+    try:  # picks up GOOGLE_APPLICATION_CREDENTIALS (SA key) or gcloud ADC automatically
+        client = bigquery.Client(project=project)
+    except Exception as e:
+        sys.exit(f"BigQuery auth not found ({e}). Run `gcloud auth application-default login` "
+                 f"or set GOOGLE_APPLICATION_CREDENTIALS to a service-account key.")
 
     # Free cost check: BigQuery dry-run reports bytes scanned WITHOUT running/charging.
     est = client.query(sql, job_config=bigquery.QueryJobConfig(dry_run=True, use_query_cache=False))
