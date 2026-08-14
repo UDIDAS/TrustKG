@@ -97,6 +97,12 @@ focus to the wider oncology domain. No expert entity gold, so (per the paper's d
 
 ## Experiments (CORAL smoke: `pdac_0` + `brca_20`, entity-level vs expert gold)
 
+> **⚠️ Scope — read before quoting these numbers.** The results below are a **2-patient smoke** (one PDAC
+> `pdac_0` + one BRCA `brca_20`), used to **select the extractor** and **validate the recall levers**. They
+> are **indicative, not the reported result** — each cohort column is a *single* patient. The **full
+> 40-patient ensemble run is in progress**; its aggregate P/R/F1 (paper Tables II & XII) is **pending** and
+> will **replace** these once complete.
+
 **Extractor comparison (single-pass).** Gemma-3-4B and Qwen3-8B lead; Llama-3.2-3B trails on recall.
 Qwen3-8B is strong but **brittle** — it canonicalizes entities under long prompts, so its span-level recall
 can collapse (pdac 0.917 → 0.402 when caps were raised). Small MoEs are **not viable**: Phi-mini-MoE is
