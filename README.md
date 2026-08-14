@@ -13,6 +13,44 @@ source-grounded, ontology-compatible, schema-valid, temporally consistent, and p
 
 ---
 
+## Contributions (IEEE BigData positioning)
+
+TRUST-KG is framed as a **data-veracity / ingestion-governance** contribution for building knowledge graphs
+from heterogeneous data at scale — not merely a clinical extractor. Mapped to the big-data V's:
+
+**1. Veracity — calibrated, selective *admission control* (the headline).**
+LLM extraction over massive heterogeneous text can't be human-verified at scale, so TRUST-KG casts KG
+*ingestion* as **calibrated selective prediction**: every candidate fact is scored for reliability and then
+**inserted / routed-to-review / rejected _before_ graph materialization**, at a **tunable quality–coverage
+operating point**. This turns "trustworthy data" from a slogan into a mechanism.
+→ Tables **VIII** (calibration: ECE/Brier/NLL), **IX** (selective admission: AURC / Coverage@95% /
+insert-review-reject), **XI** (evidence-level reliability ablation). *[planned]*
+
+**2. Variety — heterogeneous, multi-source integration.** *[data obtained]*
+One pipeline unifies expert oncology reports (CORAL), ICU notes (MIMIC-III), and longitudinal EHR
+(MIMIC-IV) — multi-institution, **pan-cancer**, differing formats/schemas — into a single ontology-aligned,
+FHIR-typed, SPARQL-queryable RDF graph. → Tables **I, II, III, XIII**.
+
+**3. Volume — scale at *ingestion* + bounded-cost scalability.**
+The final graph is modest, but ingestion is at scale: the oncology cohort is filtered from **~6.3 M
+diagnosis rows / 2 M+ clinical notes / 546 K admissions** in BigQuery *(done)*. Table **XIV**
+characterizes **throughput, verification latency, and cost as corpus fraction grows (25→100%)**, evidencing
+**bounded per-record overhead** — i.e. a *scalable method*, demonstrated, rather than a huge graph. *[planned]*
+
+**4. Value — unstructured → queryable analytics.**
+Narratives become **SPARQL-executable** cohort / temporal / multi-hop queries. → Table **XV**.
+
+**Why this reads as BigData, not clinical-NLP:** the admission-control mechanism is **domain-general** (it
+governs *any* LLM-to-graph ingestion); the evaluation foregrounds the **quality–coverage trade-off and
+scaling behavior**; and the volume claim rests on the **millions of records filtered at ingest**, not the
+final graph size.
+
+**Status.** *Obtained:* extractor selected (Gemma-3-4B ensemble, see [Experiments](#experiments-coral-smoke-pdac_0--brca_20-entity-level-vs-expert-gold)),
+MIMIC oncology cohorts curated (see [Datasets](#datasets-all-oncology)). *In progress:* full-CORAL ensemble
++ MIMIC scale extraction. *Planned:* the calibration/selective (VIII/IX/XI) and scalability (XIV) tables above.
+
+---
+
 ## Pipeline
 
 ```
