@@ -85,6 +85,7 @@ scripts/
   compare_models_smoke.py      # extractor comparison (Gemma/Qwen/Llama/MoE)
   validate_against_ann.py      # quality validation vs gold
   analyze_misses.py            # per-patient miss tracking by entity type -> fine-tuning targets
+  fetch_mimic_oncology.py      # pull MIMIC-III/IV ONCOLOGY notes via BigQuery (ICD-filtered)
   compute_all_metrics.py       # cache metrics for the notebook
   build_results_notebook.py    # regenerate the results notebook
   extract_all_pdac.py, run_mimic3_full.py, ...   # recovered run scripts
@@ -147,7 +148,8 @@ KG-construction framework, not a clinical decision system.
 - [x] Config finalized: ensemble ×3 (Gemma 2-pass + Qwen + Llama) — clears paper recall/F1 target
 - [~] Full 40-patient CORAL ensemble run (in progress, split across 2 GPUs) → Tables II, XII
 - [ ] Calibration + selective admission (ECE/Brier/NLL, AURC/coverage) → Tables VIII, IX, XI
-- [ ] MIMIC-III/IV scale run (via BigQuery) → Tables I, III, VI, XIII, XIV
+- [~] Obtain MIMIC-III/IV **oncology** notes (ICD-filtered via BigQuery, `scripts/fetch_mimic_oncology.py`)
+      → then scale run → Tables I, III, VI, XIII, XIV
 - [ ] RDF materialization + SPARQL cohort retrieval → Table XV
 - [~] Per-patient miss analysis (recall by gold label + recurring substantive misses) → targets a
       supervised fine-tune of the extractor in the next version (`scripts/analyze_misses.py`)
