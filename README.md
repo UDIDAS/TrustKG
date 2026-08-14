@@ -31,21 +31,39 @@ clinical note ──► NER (SciSpaCy) ──► schema-constrained EAV extracti
                              SPARQL cohort retrieval / temporal queries
 ```
 
-**Two-pass extraction** is the main recall lever: pass 1 extracts candidate triples; pass 2 re-extracts with
-pass-1 triples injected as graph-neighborhood evidence, then the two passes are unioned and filtered.
+**Recall levers** (validated on CORAL smoke patients `pdac_0` + `brca_20`):
+1. **Two-pass extraction** — pass 2 re-extracts with pass-1 triples injected as graph-neighborhood evidence;
+   the two passes are unioned and trust-filtered. Lifts Gemma recall ~0.71 → ~0.83.
+2. **Ensemble union** — union the 2-pass anchor with other models' outputs (dedup), then filter. Strongest
+   lever, and it *also raises precision* (independent models reinforce true entities).
 
-## Current results (Gemma-3-4B, CORAL smoke)
+## Experiments (CORAL smoke: `pdac_0` + `brca_20`, entity-level vs expert gold)
 
-Entity-level vs expert `.ann.txt` gold, `pdac_0` + `brca_20` (single-pass → 2-pass):
+**Extractor comparison (single-pass).** Gemma-3-4B and Qwen3-8B lead; Llama-3.2-3B trails on recall.
+Qwen3-8B is strong but **brittle** — it canonicalizes entities under long prompts, so its span-level recall
+can collapse (pdac 0.917 → 0.402 when caps were raised). Small MoEs are **not viable**: Phi-mini-MoE is
+incompatible with transformers 5.8, and OLMoE-1B-7B is too weak (0–7 triples). **Gemma-3-4B is selected**
+as the stable, span-faithful anchor (= the paper's "Gemma 3 4B"). Note: the recovered code pointed at a
+broken `google/gemma-4-E4B-it`; the registry now uses the official `google/gemma-3-4b-it`.
 
-| Stage | Recall | Precision | F1 | Hallucination |
+**Recall progression** (all zero-hallucination / fully source-grounded):
+
+| Config | pdac_0 F1 | brca_20 F1 | BRCA recall | BRCA precision |
 |---|---|---|---|---|
-| single-pass | 0.60–0.79 | 0.83–0.90 | 0.70–0.84 | ~0 |
-| **2-pass union** | **0.83–0.84** | 0.83–0.90 | 0.83–0.86 | ~0 |
+| Gemma single-pass | 0.70–0.83 | 0.75–0.86 | 0.656 | 0.885 |
+| Gemma **2-pass** | 0.833 | 0.861 | 0.828 | 0.896 |
+| Gemma ∪ Llama | 0.854 | 0.876 | 0.844 | 0.910 |
+| **Ensemble ×3** (Gemma ∪ Qwen ∪ Llama) | **0.879** | **0.906** | **0.890** | **0.923** |
 
-Extractor comparison found **Gemma-3-4B** the best trade-off (stable, span-faithful, precision held while
-recall rises); Qwen3-8B is brittle (canonicalizes under long prompts), and small MoEs (Phi-mini-MoE,
-OLMoE-1B-7B) were not viable. See `notebooks/TRUSTKG_Results.ipynb`.
+Ensemble ×3 **clears the paper's BRCA recall target (0.879)** and improves precision. The practical recall
+ceiling is ~0.90–0.92 — the residual misses are anaphora ("the mass") and lab-table fragments ("g/dL",
+"x10E9") that the CORAL gold annotates but aren't clean EAV entities.
+
+**Finalized config → full run.** Ensemble ×3: **Gemma-3-4B 2-pass anchor + Qwen3-8B + Llama-3.2-3B
+single-pass**, unioned and trust-filtered (`scripts/run_coral_ensemble.py`). The full 40-patient CORAL run
+is in progress (split across 2 GPUs) → paper **Tables II & XII**; it also attaches a trust score to every
+triple, producing the labeled data for the calibration/selective analysis (Tables VIII/IX/XI). Full
+walkthrough with charts + qualitative examples: `notebooks/TRUSTKG_Results.ipynb`.
 
 ## Repository layout
 
@@ -59,9 +77,10 @@ src/
   gnn/           trust_graph.py, trust_gnn.py      # learned reliability estimator
   evaluation/    kg_qa.py, kg_pubmedqa.py, split_qa.py, mimic_split_eval.py
 scripts/
-  run_coral_full.py            # full-CORAL Gemma 2-pass run (Tables II, XII)
+  run_coral_ensemble.py        # full-CORAL ENSEMBLE run (SELECTED config) → Tables II, XII
+  run_coral_full.py            # full-CORAL Gemma-only 2-pass run (baseline/ablation)
   run_gemma_2pass.py           # 2-pass + trust filter on a patient subset
-  compare_models_smoke.py      # extractor comparison
+  compare_models_smoke.py      # extractor comparison (Gemma/Qwen/Llama/MoE)
   validate_against_ann.py      # quality validation vs gold
   compute_all_metrics.py       # cache metrics for the notebook
   build_results_notebook.py    # regenerate the results notebook
@@ -97,7 +116,12 @@ python scripts/compare_models_smoke.py --gpu 0
 # Gemma 2-pass + trust filter on the same patients (stage-by-stage recall/precision)
 python scripts/run_gemma_2pass.py --gpu 0
 
-# Full-CORAL 2-pass (all 40 patients; resumable) → results/coral_full_metrics.json
+# Full-CORAL ENSEMBLE — the selected config (resumable, GPU-splittable)
+python scripts/run_coral_ensemble.py --gpu 0 \
+    --models gemma3-4b qwen3-8b llama32-3b --twopass gemma3-4b
+#   split across 2 GPUs: pass PDAC ids to --gpu 0 and BRCA ids to --gpu 1 via --patients
+
+# Full-CORAL Gemma-only 2-pass (baseline/ablation) → results/coral_full_metrics.json
 python scripts/run_coral_full.py --gpu 0
 
 # Regenerate + execute the results notebook
@@ -116,8 +140,9 @@ KG-construction framework, not a clinical decision system.
 
 ## Status / roadmap
 
-- [x] Extractor selected (Gemma-3-4B), 2-pass recall validated on smoke patients
-- [ ] Full 40-patient CORAL run → Tables II, XII
+- [x] Extractor selected (Gemma-3-4B); 2-pass + ensemble recall validated on smoke patients
+- [x] Config finalized: ensemble ×3 (Gemma 2-pass + Qwen + Llama) — clears paper recall/F1 target
+- [~] Full 40-patient CORAL ensemble run (in progress, split across 2 GPUs) → Tables II, XII
 - [ ] Calibration + selective admission (ECE/Brier/NLL, AURC/coverage) → Tables VIII, IX, XI
 - [ ] MIMIC-III/IV scale run (via BigQuery) → Tables I, III, VI, XIII, XIV
 - [ ] RDF materialization + SPARQL cohort retrieval → Table XV
