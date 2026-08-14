@@ -180,8 +180,8 @@ framework, not a clinical decision system.
 - [x] Config finalized: ensemble ×3 (Gemma 2-pass + Qwen + Llama) — clears paper recall/F1 target
 - [~] Full 40-patient CORAL ensemble run (in progress, split across 2 GPUs) → Tables II, XII
 - [ ] Calibration + selective admission (ECE/Brier/NLL, AURC/coverage) → Tables VIII, IX, XI
-- [~] Obtain MIMIC-III/IV **oncology** notes (ICD-filtered via BigQuery, `scripts/fetch_mimic_oncology.py`)
-      → then scale run → Tables I, III, VI, XIII, XIV
+- [x] Obtained MIMIC-III/IV **oncology** notes — 400 + 400, ICD-filtered via BigQuery
+      (`scripts/fetch_mimic_oncology.py`); next: scale extraction run → Tables I, III, VI, XIII, XIV
 - [ ] RDF materialization + SPARQL cohort retrieval → Table XV
 - [~] Per-patient miss analysis (recall by gold label + recurring substantive misses) → targets a
       supervised fine-tune of the extractor in the next version (`scripts/analyze_misses.py`)
