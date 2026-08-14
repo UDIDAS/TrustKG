@@ -134,13 +134,45 @@ jupyter nbconvert --to notebook --execute --inplace \
     --ExecutePreprocessor.kernel_name=llmft notebooks/TRUSTKG_Results.ipynb
 ```
 
+## MIMIC oncology data (BigQuery)
+
+The MIMIC portion of TRUST-KG is **focused on oncology patients**, to complement the CORAL oncology cohorts
+(rather than the general ICU population). `scripts/fetch_mimic_oncology.py` identifies oncology admissions by
+**malignant-neoplasm ICD codes** and pulls their free-text notes from BigQuery.
+
+- **Cohort filter:** ICD-10 `C00–C97` / ICD-9 `140–208` (`--cancer all`, the default); optional per-cancer
+  subsets via `--cancer breast,pancreatic,lung,colorectal,prostate` (breast+pancreatic mirror CORAL).
+- **Datasets** (`physionet-data`, credential-gated):
+  - MIMIC-IV — `mimiciv_3_1_hosp.diagnoses_icd` (cohort) + `mimiciv_note.discharge` / `radiology` (notes)
+  - MIMIC-III — `mimiciii_clinical.diagnoses_icd` (cohort) + `mimiciii_notes.noteevents` (notes)
+- **Access:** be credentialed for [MIMIC-III](https://physionet.org/content/mimiciii/1.4/) and
+  [MIMIC-IV](https://physionet.org/content/mimiciv/) on PhysioNet and grant BigQuery access to your query
+  identity (service-account email), then:
+
+```bash
+export GOOGLE_APPLICATION_CREDENTIALS=~/.config/gcp/bq-key.json   # kept OUTSIDE the repo
+export BQ_PROJECT=<your-billing-project>
+
+python scripts/fetch_mimic_oncology.py --source mimiciv  --cancer all --dry-run    # print SQL (no auth/cost)
+python scripts/fetch_mimic_oncology.py --source mimiciv  --cancer all --estimate   # free: GB scanned + cost
+python scripts/fetch_mimic_oncology.py --source mimiciv  --cancer all --limit 400  # pull -> data/mimic_oncology/
+python scripts/fetch_mimic_oncology.py --source mimiciii --cancer all --limit 400
+```
+
+- **Cost:** BigQuery bills the querying project by **bytes scanned**, with a **1 TB/month free tier**; each
+  oncology query scans only a few GB, so it stays free in practice. `--estimate` runs a dry-run that reports
+  the exact GB and charges nothing; `--max-gb` (default 25) caps `maximum_bytes_billed` so a query errors
+  rather than over-scan. Pulled notes land in `data/mimic_oncology/` (git-ignored, DUA) and feed the same
+  2-pass / ensemble pipeline.
+
 ## Data & ethics
 
-CORAL (oncology) and MIMIC-III/IV (ICU/EHR) are **credential-gated via PhysioNet** and governed by Data Use
-Agreements. **No patient data, extracted triples, or executed-notebook outputs are committed** — `data/`,
-`results/`, and executed notebooks are git-ignored. Obtain the datasets under your own credentials and place
-CORAL under `data/coral/{pdac,breastca}/` (`N.txt` narratives, `N.ann.txt` gold). TRUST-KG is an assistive
-KG-construction framework, not a clinical decision system.
+CORAL (oncology) and MIMIC-III/IV are **credential-gated via PhysioNet** and governed by Data Use Agreements;
+the MIMIC subset used here is **oncology-filtered** (malignant-neoplasm ICD codes) to align with CORAL.
+**No patient data, extracted triples, or executed-notebook outputs are committed** — `data/`, `results/`, and
+executed notebooks are git-ignored. Obtain the datasets under your own credentials and place CORAL under
+`data/coral/{pdac,breastca}/` (`N.txt` narratives, `N.ann.txt` gold). TRUST-KG is an assistive KG-construction
+framework, not a clinical decision system.
 
 ## Status / roadmap
 
