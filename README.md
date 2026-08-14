@@ -37,6 +37,26 @@ clinical note ──► NER (SciSpaCy) ──► schema-constrained EAV extracti
 2. **Ensemble union** — union the 2-pass anchor with other models' outputs (dedup), then filter. Strongest
    lever, and it *also raises precision* (independent models reinforce true entities).
 
+## Datasets (all oncology)
+
+| Dataset | Domain | Patients | Cases (notes) | Admissions | Median len | Gold | Split | Role |
+|---|---|---:|---:|---:|---:|---|---|---|
+| CORAL‑PDAC | Pancreatic oncology | 20 | 20 | — | ~11 K | expert entity spans | 12/4/4 | entity P/R/F1 |
+| CORAL‑BRCA | Breast oncology | 20 | 20 | — | ~11 K | expert entity spans | 12/4/4 | entity P/R/F1 |
+| MIMIC‑III (onc.) | ICU/EHR oncology | 392 | 400 | 400 | ~10.4 K | — | — | scale / source‑grounding |
+| MIMIC‑IV (onc.) | EHR oncology | 394 | 400 | 400 | ~10.1 K | — | — | scale / source‑grounding |
+
+**CORAL** (40 patients = 20 pancreatic + 20 breast) is the annotated benchmark — dense oncology narratives
+with expert `PROBLEM`/`TEST`/`TREATMENT` spans (`.ann.txt`) for entity‑level evaluation.
+
+**MIMIC‑III / MIMIC‑IV (oncology subsets)** — 400 notes each (~392–394 distinct patients / 400 admissions),
+median ~10 K chars/note, filtered to **malignant‑neoplasm ICD codes** (ICD‑10 `C00–C97` / ICD‑9 `140–208`).
+They are a **pan‑cancer population** — by note mentions, roughly: lung > colorectal > GI/esophageal >
+GU (bladder/renal) > head‑&‑neck > breast > prostate > pancreatic — so they broaden CORAL's breast+pancreatic
+focus to the wider oncology domain. No expert entity gold, so (per the paper's design) they drive
+**scale + source‑grounding** stats, not P/R/F1. Acquisition details in
+[MIMIC oncology data (BigQuery)](#mimic-oncology-data-bigquery).
+
 ## Experiments (CORAL smoke: `pdac_0` + `brca_20`, entity-level vs expert gold)
 
 **Extractor comparison (single-pass).** Gemma-3-4B and Qwen3-8B lead; Llama-3.2-3B trails on recall.
