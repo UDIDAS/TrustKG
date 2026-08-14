@@ -82,6 +82,7 @@ scripts/
   run_gemma_2pass.py           # 2-pass + trust filter on a patient subset
   compare_models_smoke.py      # extractor comparison (Gemma/Qwen/Llama/MoE)
   validate_against_ann.py      # quality validation vs gold
+  analyze_misses.py            # per-patient miss tracking by entity type -> fine-tuning targets
   compute_all_metrics.py       # cache metrics for the notebook
   build_results_notebook.py    # regenerate the results notebook
   extract_all_pdac.py, run_mimic3_full.py, ...   # recovered run scripts
@@ -146,3 +147,5 @@ KG-construction framework, not a clinical decision system.
 - [ ] Calibration + selective admission (ECE/Brier/NLL, AURC/coverage) → Tables VIII, IX, XI
 - [ ] MIMIC-III/IV scale run (via BigQuery) → Tables I, III, VI, XIII, XIV
 - [ ] RDF materialization + SPARQL cohort retrieval → Table XV
+- [~] Per-patient miss analysis (recall by gold label + recurring substantive misses) → targets a
+      supervised fine-tune of the extractor in the next version (`scripts/analyze_misses.py`)

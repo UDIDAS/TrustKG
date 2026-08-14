@@ -7,7 +7,7 @@ finalized. Values below are copied from the current draft (`docs/BigData_2026_Tr
 
 Status legend: `[ ]` not run · `[~]` run, needs check · `[x]` verified against logged output
 
-> Pipeline has **not been run at scale** (per PI). Every cell starts UNVERIFIED.
+> Pipeline has **not been run at scale**. Every cell starts UNVERIFIED.
 
 ---
 
@@ -23,7 +23,7 @@ Status legend: `[ ]` not run · `[~]` run, needs check · `[x]` verified against
 
 ---
 
-## Which tables the PI's "6–7" refers to
+## Which tables the "6–7" aim refers to
 Core results tables needing real numbers: **Tables 2, 3, 4, 5, 6, 7, 8** (7 tables).
 Table 9 (robustness) is an 8th results table. Table 1 is dataset descriptors (relation counts are the only "results-like" cells).
 Headline numbers threaded through abstract/intro/discussion all trace to **Tables 2, 4, 7** — lock those first.
