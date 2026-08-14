@@ -48,12 +48,14 @@ broken `google/gemma-4-E4B-it`; the registry now uses the official `google/gemma
 
 **Recall progression** (all zero-hallucination / fully source-grounded):
 
-| Config | pdac_0 F1 | brca_20 F1 | BRCA recall | BRCA precision |
-|---|---|---|---|---|
-| Gemma single-pass | 0.70–0.83 | 0.75–0.86 | 0.656 | 0.885 |
-| Gemma **2-pass** | 0.833 | 0.861 | 0.828 | 0.896 |
-| Gemma ∪ Llama | 0.854 | 0.876 | 0.844 | 0.910 |
-| **Ensemble ×3** (Gemma ∪ Qwen ∪ Llama) | **0.879** | **0.906** | **0.890** | **0.923** |
+| Config | PDAC P | PDAC R | PDAC F1 | BRCA P | BRCA R | BRCA F1 |
+|---|---|---|---|---|---|---|
+| Gemma single-pass | 0.900 | 0.769 | 0.830 | 0.885 | 0.656 | 0.754 |
+| Gemma **2-pass** | 0.826 | 0.840 | 0.833 | 0.896 | 0.828 | 0.861 |
+| Gemma ∪ Llama | 0.838 | 0.870 | 0.854 | 0.910 | 0.844 | 0.876 |
+| **Ensemble ×3** (Gemma ∪ Qwen ∪ Llama) | 0.854 | **0.905** | **0.879** | 0.923 | **0.890** | **0.906** |
+
+(single-pass = initial config; 2-pass onward use the raised caps. Single-pass F1 is stochastic across runs — 0.70–0.83 on PDAC.)
 
 Ensemble ×3 **clears the paper's BRCA recall target (0.879)** and improves precision. The practical recall
 ceiling is ~0.90–0.92 — the residual misses are anaphora ("the mass") and lab-table fragments ("g/dL",
