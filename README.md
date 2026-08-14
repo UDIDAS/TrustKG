@@ -86,6 +86,8 @@ scripts/
   validate_against_ann.py      # quality validation vs gold
   analyze_misses.py            # per-patient miss tracking by entity type -> fine-tuning targets
   fetch_mimic_oncology.py      # pull MIMIC-III/IV ONCOLOGY notes via BigQuery (ICD-filtered)
+  run_mimic_extraction.py      # extract MIMIC oncology notes (LOCAL only; no BigQuery) -> scale/grounding
+  queue_mimic_after_coral.sh   # auto-start MIMIC extraction once the CORAL ensemble finishes
   compute_all_metrics.py       # cache metrics for the notebook
   build_results_notebook.py    # regenerate the results notebook
   extract_all_pdac.py, run_mimic3_full.py, ...   # recovered run scripts
