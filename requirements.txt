@@ -1,0 +1,34 @@
+# TRUST-KG — core dependencies (Python 3.11, CUDA 12.1)
+# Install NER model separately:
+#   pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_lg-0.5.4.tar.gz
+
+# LLM extraction
+torch==2.5.1
+transformers==5.8.1
+accelerate>=1.13
+bitsandbytes>=0.49
+sentencepiece
+# flash-attn optional (prebuilt wheel matching torch/cuda); some MoE remote code requires it
+
+# Biomedical NER + retrieval
+spacy==3.7.5
+scispacy==0.6.2
+sentence-transformers          # MedCPT dense retriever
+rank-bm25                      # BM25 sparse retrieval
+
+# KG / RDF
+rdflib
+
+# Eval / analysis / notebook
+numpy
+scipy
+scikit-learn
+pandas
+matplotlib
+nbformat
+nbconvert
+ipykernel
+PyPDF2
+
+# Optional cloud LLM backend (Gemini)
+google-generativeai

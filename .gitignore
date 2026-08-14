@@ -1,0 +1,38 @@
+# ─────────────────────────────────────────────────────────────
+# Clinical data — DUA-restricted (CORAL/MIMIC via PhysioNet). NEVER commit.
+# (anchored to repo root so src/data/ source modules are NOT ignored)
+# ─────────────────────────────────────────────────────────────
+/data/
+
+# Run outputs — regenerable, and may contain patient-derived text/triples
+/results/
+
+# Recovered May-run artifacts (reference/backup; also on Drive). Not for the repo.
+/recovered_results/
+/recovered_code/
+
+# Unpublished paper draft (binary; lives locally in docs/)
+/docs/*.pdf
+
+# Executed notebooks — outputs can contain patient text; commit the stripped one only
+notebooks/*.executed.ipynb
+.ipynb_checkpoints/
+
+# Secrets / credentials
+.env
+*.key
+*token*
+bq-key.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+
+# Caches / logs / scratch
+*.log
+.cache/
+hf_cache/
+*.tmp
