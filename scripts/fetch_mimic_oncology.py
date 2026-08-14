@@ -97,7 +97,9 @@ def main():
     ap.add_argument("--source", choices=list(SOURCES), default="mimiciv")
     ap.add_argument("--cancer", default="all", help="all | comma list: breast,pancreatic,lung,...")
     ap.add_argument("--limit", type=int, default=400)
-    ap.add_argument("--dry-run", action="store_true", help="print the SQL and exit (no auth needed)")
+    ap.add_argument("--dry-run", action="store_true", help="print the SQL and exit (no auth, no cost)")
+    ap.add_argument("--estimate", action="store_true", help="BigQuery dry-run: report GB scanned + cost, run nothing (no charge)")
+    ap.add_argument("--max-gb", type=float, default=25.0, help="hard cap on bytes billed; query errors rather than exceed it")
     args = ap.parse_args()
     cancers = ["all"] if args.cancer == "all" else args.cancer.split(",")
     src = SOURCES[args.source]
@@ -113,8 +115,22 @@ def main():
                  "Use --dry-run to inspect the SQL without auth.")
     from google.cloud import bigquery
     client = bigquery.Client(project=project)
+
+    # Free cost check: BigQuery dry-run reports bytes scanned WITHOUT running/charging.
+    est = client.query(sql, job_config=bigquery.QueryJobConfig(dry_run=True, use_query_cache=False))
+    gb = est.total_bytes_processed / 1e9
+    over = max(0.0, gb - 1024)  # 1 TB/month free tier
+    print(f"[cost] this query scans {gb:.2f} GB  |  free tier 1024 GB/month  |  "
+          f"cost if beyond free tier: ${over/1000*6.25:.4f}", flush=True)
+    if args.estimate:
+        print("[cost] --estimate only; nothing was run and nothing was charged.")
+        return
+    if gb > args.max_gb:
+        sys.exit(f"[abort] {gb:.1f} GB exceeds --max-gb={args.max_gb}. Nothing run. Raise --max-gb to proceed.")
+
     print(f"[fetch] {args.source} oncology={cancers} limit={args.limit}", flush=True)
-    rows = list(client.query(sql).result())
+    job_config = bigquery.QueryJobConfig(maximum_bytes_billed=int(args.max_gb * 1e9))  # hard cap
+    rows = list(client.query(sql, job_config=job_config).result())
 
     out = Path(f"data/mimic_oncology/{args.source}"); out.mkdir(parents=True, exist_ok=True)
     fp = out / f"notes_{'_'.join(cancers)}.jsonl"
