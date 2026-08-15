@@ -112,6 +112,34 @@ BRCA recall **0.890** meets the paper's 0.879 target; tight CIs = robust; zero h
 
 This closes the loop **unstructured notes → validated triples → queryable RDF/SPARQL** (the Value V).
 
+**Example queries on the CORAL graph:**
+
+```sparql
+# pancreatic-cancer cohort  ->  20/20 patients
+SELECT (COUNT(DISTINCT ?p) AS ?n) WHERE {
+  ?p trustkg:hasEntity ?e . ?e a fhir:Condition ; rdfs:label ?l .
+  FILTER(REGEX(?l, "pancrea|adenocarc", "i")) }
+
+# chemotherapy cohort  ->  17/20 patients
+SELECT (COUNT(DISTINCT ?p) AS ?n) WHERE {
+  ?p trustkg:hasEntity ?e . ?e a fhir:MedicationStatement ; rdfs:label ?l .
+  FILTER(REGEX(?l, "gemcitabine|abraxane|fluorouracil|chemo", "i")) }
+
+# ontology-grounded entities (sample rows)
+SELECT ?l ?code WHERE { ?e rdfs:label ?l ; trustkg:ontologyCode ?code . }
+#   "distant metastasis"  ->  SNOMED:128462008
+#   "liver metastasis"    ->  SNOMED:128462008
+```
+
+**E10 — KG semantics vs keyword search (where keyword *should* fail).** On negation/experiencer-prone
+concepts, naive keyword retrieval matches "no evidence of metastasis" / "family history of …" mentions.
+Across 10 such concepts, keyword yields **104 false-positive patient retrievals**; the KG's semantic
+extraction avoids **39 % (41/104)** — its precision advantage over raw-text search. The residual 61 % is an
+**honest limitation** (the extractor doesn't fully suppress negated mentions), motivating an
+assertion/negation validation layer (a natural addition to the Veracity stack). Note: on *simple*
+single-concept retrieval over CORAL's concept-dense reports, keyword is competitive — the KG's edge is on
+**semantically hard** and **structured/relational** queries, not term matching.
+
 **How the config was chosen** (from a 2-patient `pdac_0`+`brca_20` smoke — *not* the reported numbers):
 **Gemma-3-4B** selected as a stable, span-faithful anchor; **Qwen3-8B** is strong but brittle (canonicalizes →
 span-recall can collapse); small MoEs not viable (Phi-mini-MoE incompatible with transformers 5.8, OLMoE too
