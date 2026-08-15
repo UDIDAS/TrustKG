@@ -97,29 +97,44 @@ focus to the wider oncology domain. No expert entity gold, so (per the paper's d
 **scale + source‑grounding** stats, not P/R/F1. Acquisition details in
 [MIMIC oncology data (BigQuery)](#mimic-oncology-data-bigquery).
 
-## Experiments (CORAL smoke: `pdac_0` + `brca_20`, entity-level vs expert gold)
+## Experiments — CORAL, full pipeline end-to-end (per cohort)
 
-> **⚠️ Scope — read before quoting these numbers.** The results below are a **2-patient smoke** (one PDAC
-> `pdac_0` + one BRCA `brca_20`), used to **select the extractor** and **validate the recall levers**. They
-> are **indicative, not the reported result** — each cohort column is a *single* patient. The **full
-> 40-patient ensemble run is in progress**; its aggregate P/R/F1 (paper Tables II & XII) is **pending** and
-> will **replace** these once complete.
+The complete pipeline runs end-to-end on all 40 CORAL patients; results are **per cohort** (20 PDAC +
+20 BRCA), never pooled. Reproduce: extraction via `run_coral_ensemble.py`, graph stage via
+`run_coral_graph.py`.
 
-**Extractor comparison (single-pass).** Gemma-3-4B and Qwen3-8B lead; Llama-3.2-3B trails on recall.
-Qwen3-8B is strong but **brittle** — it canonicalizes entities under long prompts, so its span-level recall
-can collapse (pdac 0.917 → 0.402 when caps were raised). Small MoEs are **not viable**: Phi-mini-MoE is
-incompatible with transformers 5.8, and OLMoE-1B-7B is too weak (0–7 triples). **Gemma-3-4B is selected**
-as the stable, span-faithful anchor (= the paper's "Gemma 3 4B"). Note: the recovered code pointed at a
-broken `google/gemma-4-E4B-it`; the registry now uses the official `google/gemma-3-4b-it`.
+**Stage 1 — Extraction** · ensemble ×3 (Gemma-3-4B 2-pass ∪ Qwen3-8B ∪ Llama-3.2-3B), entity-level vs gold:
 
-**Recall progression** (all zero-hallucination / fully source-grounded):
+| Cohort | N | Precision | Recall | F1 (mean ± sd) | 95% CI |
+|---|---|---|---|---|---|
+| CORAL-PDAC | 20 | 0.888 | 0.870 | **0.877 ± 0.043** | [0.858, 0.897] |
+| CORAL-BRCA | 20 | 0.850 | **0.890** | **0.868 ± 0.045** | [0.848, 0.888] |
 
-| Config | PDAC P | PDAC R | PDAC F1 | BRCA P | BRCA R | BRCA F1 |
-|---|---|---|---|---|---|---|
-| Gemma single-pass | 0.900 | 0.769 | 0.830 | 0.885 | 0.656 | 0.754 |
-| Gemma **2-pass** | 0.826 | 0.840 | 0.833 | 0.896 | 0.828 | 0.861 |
-| Gemma ∪ Llama | 0.838 | 0.870 | 0.854 | 0.910 | 0.844 | 0.876 |
-| **Ensemble ×3** (Gemma ∪ Qwen ∪ Llama) | 0.854 | **0.905** | **0.879** | 0.923 | **0.890** | **0.906** |
+BRCA recall **0.890** meets the paper's 0.879 target; tight CIs = robust; zero hallucination. → Tables **II**, **XII**.
+
+**Stage 2 — Validation** · trust-filter (δ=0.4): a **no-op** here (nothing pruned → precision held).
+
+**Stage 3–4 — RDF materialization + SPARQL cohort queries** (all queries execute) → Tables **XIII**, **XV**:
+
+| | CORAL-PDAC | CORAL-BRCA |
+|---|---:|---:|
+| RDF triples | 40,412 | 41,293 |
+| KG entities | 3,601 | 3,822 |
+| ontology-linked | 163 | 223 |
+| conditions / medications / procedures | 1178 / 558 / 1351 | 1351 / 744 / 1474 |
+| temporal facts | 8,212 | 7,912 |
+| cancer cohort (SPARQL) | 20/20 | 20/20 |
+| chemotherapy cohort (SPARQL) | 17/20 | 13/20 |
+| SPARQL queries executed | **10/10** | **10/10** |
+
+This closes the loop **unstructured notes → validated triples → queryable RDF/SPARQL** (the Value V).
+
+**How the config was chosen** (2-patient `pdac_0`+`brca_20` smoke — *not* the reported numbers): **Gemma-3-4B**
+selected as a stable, span-faithful anchor; **Qwen3-8B** is strong but brittle (canonicalizes → span-recall
+can collapse); small MoEs not viable (Phi-mini-MoE incompatible with transformers 5.8, OLMoE too weak). Recall
+levers stack — single-pass → **2-pass** (~0.71→0.83) → **ensemble ×3** (chosen: clears the recall target while
+*raising* precision). The broken `google/gemma-4-E4B-it` in the recovered code was swapped for the official
+`google/gemma-3-4b-it`.
 
 (single-pass = initial config; 2-pass onward use the raised caps. Single-pass F1 is stochastic across runs — 0.70–0.83 on PDAC.)
 
@@ -247,10 +262,11 @@ framework, not a clinical decision system.
 
 - [x] Extractor selected (Gemma-3-4B); 2-pass + ensemble recall validated on smoke patients
 - [x] Config finalized: ensemble ×3 (Gemma 2-pass + Qwen + Llama) — clears paper recall/F1 target
-- [~] Full 40-patient CORAL ensemble run (in progress, split across 2 GPUs) → Tables II, XII
+- [x] Full 40-patient CORAL ensemble run (done — 20 PDAC + 20 BRCA, per cohort) → Tables II, XII
+- [x] CORAL end-to-end: RDF materialization + SPARQL cohort queries (per cohort) → Tables XIII, XV (`run_coral_graph.py`)
 - [ ] Calibration + selective admission (ECE/Brier/NLL, AURC/coverage) → Tables VIII, IX, XI
 - [x] Obtained MIMIC-III/IV **oncology** notes — 400 + 400, ICD-filtered via BigQuery
       (`scripts/fetch_mimic_oncology.py`); next: scale extraction run → Tables I, III, VI, XIII, XIV
-- [ ] RDF materialization + SPARQL cohort retrieval → Table XV
+- [ ] RDF + SPARQL on the MIMIC oncology graphs (CORAL done above)
 - [~] Per-patient miss analysis (recall by gold label + recurring substantive misses) → targets a
       supervised fine-tune of the extractor in the next version (`scripts/analyze_misses.py`)

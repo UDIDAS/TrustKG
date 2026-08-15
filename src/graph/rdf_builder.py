@@ -41,6 +41,34 @@ FHIR_CLASS_MAP = {
     "AllergyIntolerance": FHIR.AllergyIntolerance,
 }
 
+# Models emit free-form FHIR types (Medication, Finding, Symptom, Diagnosis, ...);
+# normalize the common variants to the 7 canonical resource types above.
+_FHIR_ALIASES = {
+    "medication": "MedicationStatement", "medicationstatement": "MedicationStatement", "drug": "MedicationStatement",
+    "condition": "Condition", "diagnosis": "Condition", "problem": "Condition", "symptom": "Condition",
+    "disease": "Condition", "disorder": "Condition", "clinicalcondition": "Condition",
+    "observation": "Observation", "finding": "Observation", "obs": "Observation", "test": "Observation",
+    "laboratorytest": "Observation", "labtest": "Observation", "lab": "Observation", "measurement": "Observation",
+    "vitalsign": "Observation", "vitalsigns": "Observation", "codeableconcept": "Observation",
+    "procedure": "Procedure", "surgery": "Procedure", "intervention": "Procedure",
+    "imagingstudy": "Procedure", "imaging": "Procedure",
+    "careplan": "CarePlan", "familymemberhistory": "FamilyMemberHistory", "familyhistory": "FamilyMemberHistory",
+    "allergyintolerance": "AllergyIntolerance", "allergy": "AllergyIntolerance",
+}
+
+
+def _normalize_fhir_type(ft: str) -> str:
+    """Map a model-emitted fhir_type string to a canonical FHIR resource type."""
+    if not ft:
+        return ""
+    key = str(ft).strip().lower()
+    if key in _FHIR_ALIASES:
+        return _FHIR_ALIASES[key]
+    for canon in FHIR_CLASS_MAP:          # already canonical (any case)
+        if key == canon.lower():
+            return canon
+    return str(ft)                        # unknown -> passthrough (stays untyped)
+
 
 def _safe_uri(text: str) -> str:
     """Convert text to a safe URI component."""
@@ -163,7 +191,7 @@ def build_patient_graph(
         entity_uri = TRUSTKG[_safe_uri(entity)]
 
         # Add entity type
-        fhir_class = FHIR_CLASS_MAP.get(fhir_type)
+        fhir_class = FHIR_CLASS_MAP.get(_normalize_fhir_type(fhir_type))
         if fhir_class:
             g.add((entity_uri, RDF.type, fhir_class))
         g.add((entity_uri, RDFS.label, Literal(entity)))
