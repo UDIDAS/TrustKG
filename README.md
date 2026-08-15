@@ -153,18 +153,21 @@ Table I — calibration part (lower better):
 | Reliability | ECE | Brier | NLL |
 |---|---|---|---|
 | Heuristic trust | 0.141 | 0.119 | 0.406 |
-| **Learned** | **0.037** | **0.092** | **0.312** |
+| **Learned** | **0.036** | **0.091** | **0.311** |
+| Learned + calibration | 0.041 | 0.094 | 0.320 |
 
 Table I — selective admission part (operating point set on dev for ≥95% precision):
 
 | Policy | AURC ↓ | Cov@95% ↑ | Insert | Review | Reject | Insert-prec |
 |---|---|---|---|---|---|---|
-| Heuristic trust | 0.094 | 0.003 | 21% | 78% | 0.1% | 0.93 |
-| **Learned (calibrated)** | **0.045** | **0.575** | **59.5%** | 36.6% | 4.0% | **0.948** |
+| Heuristic trust | 0.094 | 0.003 | 21.5% | 78.4% | 0.1% | 0.932 |
+| **Learned** | **0.045** | **0.595** | **60.1%** | 35.9% | 4.0% | **0.948** |
+| Learned + calibration | 0.045 | 0.595 | 60.1% | 35.9% | 4.0% | 0.948 |
 
-The calibrated selective policy **auto-inserts ~60% of candidate facts at 94.8% precision**, routes ~37% to
+The learned selective policy **auto-inserts ~60% of candidate facts at 94.8% precision**, routes ~36% to
 review, rejects ~4% — the tunable quality–coverage admission control (the Veracity contribution). The learned
-model is already well-calibrated, so Platt adds nothing on top (an honest no-op).
+scores are already well-calibrated, so post-hoc calibration doesn't improve them (ECE 0.036→0.041 — an honest
+no-op). Numbers are frozen (seeded learner) so the table is reproducible.
 
 **How the config was chosen** (from a 2-patient `pdac_0`+`brca_20` smoke — *not* the reported numbers):
 **Gemma-3-4B** selected as a stable, span-faithful anchor; **Qwen3-8B** is strong but brittle (canonicalizes →

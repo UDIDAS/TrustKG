@@ -67,7 +67,7 @@ print(f"triples {len(data)} | correct-rate {y.mean():.3f} | train {tr.sum()} val
 # ── learned reliability: gradient boosting on features, Platt on val ──
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
-gb = GradientBoostingClassifier(max_depth=3, n_estimators=200).fit(X[tr | va], y[tr | va])
+gb = GradientBoostingClassifier(max_depth=3, n_estimators=200, random_state=0).fit(X[tr | va], y[tr | va])
 learn_te = gb.predict_proba(X[te])[:, 1]
 platt = LogisticRegression().fit(gb.predict_proba(X[va])[:, 1].reshape(-1, 1), y[va])
 learn_cal_te = platt.predict_proba(learn_te.reshape(-1, 1))[:, 1]
