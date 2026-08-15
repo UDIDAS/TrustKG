@@ -95,11 +95,11 @@ The complete pipeline runs end-to-end on all 40 CORAL patients; results are **pe
 | CORAL-PDAC | 20 | 0.888 | 0.870 | **0.877 ± 0.043** | [0.858, 0.897] |
 | CORAL-BRCA | 20 | 0.850 | **0.890** | **0.868 ± 0.045** | [0.848, 0.888] |
 
-BRCA recall **0.890** meets the paper's 0.879 target; tight CIs = robust; zero hallucination. → Tables **II**, **XII**.
+BRCA recall **0.890** meets the paper's 0.879 target; tight CIs = robust; zero hallucination. → Table **II**.
 
 **Stage 2 — Validation** · trust-filter (δ=0.4): a **no-op** here (nothing pruned → precision held).
 
-**Stage 3–4 — RDF materialization + SPARQL cohort queries** (all queries execute) → Tables **XIII**, **XV**:
+**Stage 3–4 — RDF materialization + SPARQL cohort queries** (all queries execute) → Table **VI**:
 
 | | CORAL-PDAC | CORAL-BRCA |
 |---|---:|---:|
