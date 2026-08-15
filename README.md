@@ -20,8 +20,10 @@ heterogeneous data at scale — not merely a clinical extractor. Mapped to the b
 1. **Veracity — calibrated, selective admission control (the headline).** LLM extraction over massive
    heterogeneous text can't be human-verified at scale, so TRUST-KG casts KG *ingestion* as **calibrated
    selective prediction**: each candidate fact is scored for reliability and **inserted / routed-to-review /
-   rejected before materialization**, at a **tunable quality–coverage operating point**. → Tables VIII
-   (calibration: ECE/Brier/NLL), IX (selective admission: AURC / Coverage@95%), XI (reliability ablation).
+   rejected before materialization**, at a **tunable quality–coverage operating point**. **Demonstrated on
+   CORAL** (held-out test): a learned reliability model **auto-inserts ~60% of candidate facts at 94.8%
+   precision** (37% to review, 4% rejected), halving selective AURC (0.09→0.05) and cutting ECE 0.14→0.04.
+   → Tables VIII, IX (XI ablation pending).
 2. **Variety — heterogeneous, multi-source integration.** One pipeline unifies expert oncology reports
    (CORAL), ICU notes (MIMIC-III), and longitudinal EHR (MIMIC-IV) — multi-institution, **pan-cancer** — into
    a single ontology-aligned, FHIR-typed, SPARQL-queryable RDF graph. → Tables I, II, III, XIII.
@@ -140,6 +142,30 @@ assertion/negation validation layer (a natural addition to the Veracity stack). 
 single-concept retrieval over CORAL's concept-dense reports, keyword is competitive — the KG's edge is on
 **semantically hard** and **structured/relational** queries, not term matching.
 
+### Veracity — calibration & selective admission (CORAL, held-out test)
+
+Every extracted triple gets a reliability score; a **learned reliability** model (validation-layer +
+structural features, trained on the train split) beats the heuristic trust and enables **selective admission**
+at a target precision.
+
+Table VIII — calibration (lower better):
+
+| Reliability | ECE | Brier | NLL |
+|---|---|---|---|
+| Heuristic trust | 0.141 | 0.119 | 0.406 |
+| **Learned** | **0.037** | **0.092** | **0.312** |
+
+Table IX — selective admission (operating point set on dev for ≥95% precision):
+
+| Policy | AURC ↓ | Cov@95% ↑ | Insert | Review | Reject | Insert-prec |
+|---|---|---|---|---|---|---|
+| Heuristic trust | 0.094 | 0.003 | 21% | 78% | 0.1% | 0.93 |
+| **Learned (calibrated)** | **0.045** | **0.575** | **59.5%** | 36.6% | 4.0% | **0.948** |
+
+The calibrated selective policy **auto-inserts ~60% of candidate facts at 94.8% precision**, routes ~37% to
+review, rejects ~4% — the tunable quality–coverage admission control (the Veracity contribution). The learned
+model is already well-calibrated, so Platt adds nothing on top (an honest no-op).
+
 **How the config was chosen** (from a 2-patient `pdac_0`+`brca_20` smoke — *not* the reported numbers):
 **Gemma-3-4B** selected as a stable, span-faithful anchor; **Qwen3-8B** is strong but brittle (canonicalizes →
 span-recall can collapse); small MoEs not viable (Phi-mini-MoE incompatible with transformers 5.8, OLMoE too
@@ -166,11 +192,12 @@ uses a resident-model, batched-inference runner for throughput, feeding the MIMI
 - Extractor selected (Gemma-3-4B ensemble ×3); recall levers validated.
 - Full 40-patient CORAL run, per cohort → Tables II, XII.
 - CORAL end-to-end: RDF materialization + SPARQL cohort queries, per cohort → Tables XIII, XV.
+- Veracity: calibration + selective admission on CORAL — learned reliability auto-inserts ~60% at 94.8% precision → Tables VIII, IX.
 - MIMIC-III / MIMIC-IV oncology cohorts curated (400 + 400 notes).
 
 **Next**
 - MIMIC scale extraction (throughput-optimized) → Tables I, III, VI, XIII, XIV.
-- Calibration + selective admission (ECE/Brier/NLL, AURC/coverage) → Tables VIII, IX, XI.
+- Evidence-level reliability ablation → Table XI; extend calibration/selective to MIMIC.
 - Per-patient miss analysis (recall by entity type) → extractor fine-tuning for the next version.
 
 ---
