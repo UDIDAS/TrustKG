@@ -23,16 +23,16 @@ heterogeneous data at scale — not merely a clinical extractor. Mapped to the b
    rejected before materialization**, at a **tunable quality–coverage operating point**. **Demonstrated on
    CORAL** (held-out test): a learned reliability model **auto-inserts ~60% of candidate facts at 94.8%
    precision** (37% to review, 4% rejected), halving selective AURC (0.09→0.05) and cutting ECE 0.14→0.04.
-   → Tables VIII, IX (XI ablation pending).
+   → Table I.
 2. **Variety — heterogeneous, multi-source integration.** One pipeline unifies expert oncology reports
    (CORAL), ICU notes (MIMIC-III), and longitudinal EHR (MIMIC-IV) — multi-institution, **pan-cancer** — into
-   a single ontology-aligned, FHIR-typed, SPARQL-queryable RDF graph. → Tables I, II, III, XIII.
+   a single ontology-aligned, FHIR-typed, SPARQL-queryable RDF graph. → Tables IV, VI.
 3. **Volume — scale at ingestion + bounded-cost scalability.** The oncology cohort is filtered from
-   **~6.3 M diagnosis rows / 2 M+ notes / 546 K admissions** in BigQuery; Table XIV characterizes
+   **~6.3 M diagnosis rows / 2 M+ notes / 546 K admissions** in BigQuery; Table VII characterizes
    **throughput, verification latency, and cost as corpus fraction grows**, via a resident-model,
-   batched-inference extractor — a *scalable method*, not a huge graph. → Table XIV.
+   batched-inference extractor — a *scalable method*, not a huge graph. → Table VII.
 4. **Value — unstructured → queryable analytics.** Narratives become **SPARQL-executable** cohort / temporal /
-   multi-hop queries. → Table XV.
+   multi-hop queries. → Table VI.
 
 **Why this reads as BigData, not clinical-NLP:** the admission-control mechanism is **domain-general** (it
 governs any LLM-to-graph ingestion); the evaluation foregrounds the **quality–coverage trade-off and scaling
@@ -148,14 +148,14 @@ Every extracted triple gets a reliability score; a **learned reliability** model
 structural features, trained on the train split) beats the heuristic trust and enables **selective admission**
 at a target precision.
 
-Table VIII — calibration (lower better):
+Table I — calibration part (lower better):
 
 | Reliability | ECE | Brier | NLL |
 |---|---|---|---|
 | Heuristic trust | 0.141 | 0.119 | 0.406 |
 | **Learned** | **0.037** | **0.092** | **0.312** |
 
-Table IX — selective admission (operating point set on dev for ≥95% precision):
+Table I — selective admission part (operating point set on dev for ≥95% precision):
 
 | Policy | AURC ↓ | Cov@95% ↑ | Insert | Review | Reject | Insert-prec |
 |---|---|---|---|---|---|---|
@@ -190,14 +190,14 @@ uses a resident-model, batched-inference runner for throughput, feeding the MIMI
 
 **Done**
 - Extractor selected (Gemma-3-4B ensemble ×3); recall levers validated.
-- Full 40-patient CORAL run, per cohort → Tables II, XII.
-- CORAL end-to-end: RDF materialization + SPARQL cohort queries, per cohort → Tables XIII, XV.
-- Veracity: calibration + selective admission on CORAL — learned reliability auto-inserts ~60% at 94.8% precision → Tables VIII, IX.
+- Full 40-patient CORAL run, per cohort → Table II.
+- CORAL end-to-end: RDF materialization + SPARQL cohort queries, per cohort → Table VI.
+- Veracity: calibration + selective admission on CORAL — learned reliability auto-inserts ~60% at 94.8% precision → Table I.
 - MIMIC-III / MIMIC-IV oncology cohorts curated (400 + 400 notes).
 
 **Next**
-- MIMIC scale extraction (throughput-optimized) → Tables I, III, VI, XIII, XIV.
-- Evidence-level reliability ablation → Table XI; extend calibration/selective to MIMIC.
+- MIMIC scale extraction (throughput-optimized) → Tables IV, VI, VII.
+- Heterogeneous-evidence (retrieval) eval → Table V; extend calibration/selective to MIMIC.
 - Per-patient miss analysis (recall by entity type) → extractor fine-tuning for the next version.
 
 ---
