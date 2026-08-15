@@ -33,12 +33,10 @@ if [ "$c1" -lt 20 ] && ! running "run_coral_ensemble.py --gpu 1"; then
   echo "$(date) resume_all: relaunched CORAL gpu1 (was $c1/20)" >> "$LOG"
 fi
 
-# ── MIMIC: relaunch the watcher (waits for CORAL, then extracts) if not done/running ──
-m3=$(count results/mimic_mimiciii_metrics.json); m4=$(count results/mimic_mimiciv_metrics.json)
-if { [ "$m3" -lt 400 ] || [ "$m4" -lt 400 ]; } \
-   && ! running "queue_mimic_after_coral.sh" && ! running "run_mimic_extraction.py"; then
-  nohup bash scripts/queue_mimic_after_coral.sh >> results/mimic_watcher.log 2>&1 &
-  echo "$(date) resume_all: relaunched MIMIC watcher (mimiciii=$m3 mimiciv=$m4)" >> "$LOG"
-fi
+# ── MIMIC: HELD for the optimized runner (scripts/run_mimic_fast.py). We do NOT
+#    auto-launch it on resume — it's started deliberately after CORAL finishes and the
+#    fast (batched) runner is benchmarked/validated. run_mimic_fast is resumable
+#    (results/mimic_*_fast_metrics.json), so it's safe to (re)start when we do.
+m3=$(count results/mimic_mimiciii_fast_metrics.json); m4=$(count results/mimic_mimiciv_fast_metrics.json)
 
-echo "$(date) resume_all: done (coral $c0/$c1 of 20; mimic $m3/$m4 of 400)" >> "$LOG"
+echo "$(date) resume_all: done (coral $c0/$c1 of 20; mimic-fast $m3/$m4 of 400; MIMIC auto-start held)" >> "$LOG"

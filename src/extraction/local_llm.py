@@ -168,6 +168,64 @@ def generate(
     return result
 
 
+def generate_batch(
+    model_name: str,
+    prompts: list[tuple[str, str]],
+    gpu_id: int = 0,
+    max_new_tokens: int | None = None,
+    temperature: float = 0.1,
+    batch_size: int = 6,
+) -> list[str]:
+    """Throughput-oriented batched generation.
+
+    prompts: list of (system_prompt, user_prompt). The model is loaded ONCE and
+    kept resident; prompts are processed in padded batches (left-padded for decoder
+    generation) so the GPU stays saturated instead of one-prompt-at-a-time.
+    Returns raw output strings aligned to `prompts`.
+    """
+    if max_new_tokens is None:
+        from src.config import EXTRACT_MAX_NEW_TOKENS
+        max_new_tokens = EXTRACT_MAX_NEW_TOKENS
+    model, tokenizer = load_model(model_name, gpu_id)
+    device = f"cuda:{gpu_id}"
+    if tokenizer.pad_token_id is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    prev_side = tokenizer.padding_side
+    tokenizer.padding_side = "left"   # required so generated tokens align across the batch
+
+    def _render(sp: str, up: str) -> str:
+        msgs = [{"role": "system", "content": sp}, {"role": "user", "content": up}]
+        for kw in ({"enable_thinking": False}, {}):
+            try:
+                return tokenizer.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True, **kw)
+            except TypeError:
+                continue
+            except Exception:
+                break
+        return tokenizer.apply_chat_template(
+            [{"role": "user", "content": sp + "\n\n" + up}], tokenize=False, add_generation_prompt=True)
+
+    outputs: list[str] = []
+    try:
+        for i in range(0, len(prompts), batch_size):
+            texts = [_render(sp, up) for sp, up in prompts[i:i + batch_size]]
+            inputs = tokenizer(texts, return_tensors="pt", padding=True).to(device)
+            in_len = inputs["input_ids"].shape[1]
+            with torch.no_grad():
+                out = model.generate(
+                    **inputs, max_new_tokens=max_new_tokens,
+                    do_sample=temperature > 0, temperature=max(temperature, 0.01),
+                    top_p=0.95 if temperature > 0 else 1.0, pad_token_id=tokenizer.eos_token_id,
+                )
+            for row in out[:, in_len:]:
+                outputs.append(tokenizer.decode(row, skip_special_tokens=True))
+            del inputs, out
+            torch.cuda.empty_cache()
+    finally:
+        tokenizer.padding_side = prev_side
+    return outputs
+
+
 def generate_with_entropy(
     model_name: str,
     system_prompt: str,

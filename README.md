@@ -35,7 +35,9 @@ FHIR-typed, SPARQL-queryable RDF graph. → Tables **I, II, III, XIII**.
 The final graph is modest, but ingestion is at scale: the oncology cohort is filtered from **~6.3 M
 diagnosis rows / 2 M+ clinical notes / 546 K admissions** in BigQuery *(done)*. Table **XIV**
 characterizes **throughput, verification latency, and cost as corpus fraction grows (25→100%)**, evidencing
-**bounded per-record overhead** — i.e. a *scalable method*, demonstrated, rather than a huge graph. *[planned]*
+**bounded per-record overhead** — i.e. a *scalable method*, demonstrated, rather than a huge graph. The
+throughput comes from a **resident-model, batched-inference** extractor (`run_mimic_fast.py`); a naive serial
+baseline (`run_mimic_extraction.py`) is retained for the head-to-head speedup measurement. *[planned]*
 
 **4. Value — unstructured → queryable analytics.**
 Narratives become **SPARQL-executable** cohort / temporal / multi-hop queries. → Table **XV**.
@@ -150,8 +152,9 @@ scripts/
   validate_against_ann.py      # quality validation vs gold
   analyze_misses.py            # per-patient miss tracking by entity type -> fine-tuning targets
   fetch_mimic_oncology.py      # pull MIMIC-III/IV ONCOLOGY notes via BigQuery (ICD-filtered)
-  run_mimic_extraction.py      # extract MIMIC oncology notes (LOCAL only; no BigQuery) -> scale/grounding
-  queue_mimic_after_coral.sh   # auto-start MIMIC extraction once the CORAL ensemble finishes
+  run_mimic_fast.py            # throughput-optimized MIMIC extraction (resident model + batched chunks)
+  run_mimic_extraction.py      # baseline serial MIMIC extraction (kept for the speedup comparison)
+  queue_mimic_after_coral.sh   # auto-start FAST MIMIC extraction once the CORAL ensemble finishes
   compute_all_metrics.py       # cache metrics for the notebook
   build_results_notebook.py    # regenerate the results notebook
   extract_all_pdac.py, run_mimic3_full.py, ...   # recovered run scripts
