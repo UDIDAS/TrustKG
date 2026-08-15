@@ -9,6 +9,10 @@ Entity–Attribute–Value (EAV) triple is admitted only if it is source-grounde
 schema-valid, temporally consistent, and passes a trust threshold.
 
 > Target venue: **IEEE BigData 2026**. No patient data is committed (see [Data & ethics](#data--ethics)).
+>
+> **Canonical paper numbers → [docs/PAPER_TABLES.md](docs/PAPER_TABLES.md)** — a table-by-table reference
+> mirroring the draft's 7 tables, with every cell marked ✅ verified / ⛔ pending / ⚠️ needs decision, plus the
+> abstract `[GATED]` fill-in map. Update the manuscript from that file.
 
 ---
 
