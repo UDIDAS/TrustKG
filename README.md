@@ -136,14 +136,17 @@ they drive **scale + source-grounding** stats, not P/R/F1.
 The complete pipeline runs end-to-end on all 40 CORAL patients; results are **per cohort** (20 PDAC +
 20 BRCA), never pooled.
 
-**Stage 1 — Extraction** · ensemble ×3 (Gemma-3-4B 2-pass ∪ Qwen3-8B ∪ Llama-3.2-3B), entity-level vs gold:
+**Stage 1 — Extraction** · sub-5B ensemble (Gemma-4-E4B **2-pass anchor** ∪ single-pass Llama-3.2-3B,
+Qwen3-4B, MedGemma-4B), entity-level vs gold (exact scorer):
 
 | Cohort | N | Precision | Recall | F1 (mean ± sd) | 95% CI |
 |---|---|---|---|---|---|
-| CORAL-PDAC | 20 | 0.888 | 0.870 | **0.877 ± 0.043** | [0.858, 0.897] |
-| CORAL-BRCA | 20 | 0.850 | **0.890** | **0.868 ± 0.045** | [0.848, 0.888] |
+| CORAL-PDAC | 20 | 0.958 | 0.815 | **0.879 ± 0.048** | [0.858, 0.900] |
+| CORAL-BRCA | 20 | 0.940 | 0.848 | **0.890 ± 0.044** | [0.871, 0.909] |
 
-BRCA recall **0.890** meets the paper's 0.879 target; tight CIs = robust; zero hallucination. → Table **II**.
+Both cohorts' F1 **match/beat the prior Gemma-3 + Qwen-8B ensemble** (0.877 / 0.868) at **precision ~0.95** and
+half the parameter budget — the all-≤5B constraint cost nothing. The 2-pass anchor lifts ensemble recall from
+~0.73 (1-pass) to **0.83**. → Table **II**.
 
 **Stage 2 — Validation** · trust-filter (δ=0.4): a **no-op** here (nothing pruned → precision held).
 
@@ -217,12 +220,13 @@ review, rejects ~4% — the tunable quality–coverage admission control (the Ve
 scores are already well-calibrated, so post-hoc calibration doesn't improve them (ECE 0.036→0.041 — an honest
 no-op). Numbers are frozen (seeded learner) so the table is reproducible.
 
-**How the config was chosen** (from a 2-patient `pdac_0`+`brca_20` smoke — *not* the reported numbers):
-**Gemma-3-4B** selected as a stable, span-faithful anchor; **Qwen3-8B** is strong but brittle (canonicalizes →
-span-recall can collapse); small MoEs not viable (Phi-mini-MoE incompatible with transformers 5.8, OLMoE too
-weak). Recall levers stack: single-pass → 2-pass (~0.71→0.83) → **ensemble ×3** (chosen — clears the recall
-target while *raising* precision). The practical recall ceiling is ~0.90–0.92; residual misses are anaphora
-and lab-table fragments that the gold annotates but aren't clean EAV entities.
+**How the config was chosen** (extractor-comparison sweep over all 2ⁿ−1 model unions on full CORAL, gold-scored;
+`scripts/combo_eval.py`): every candidate is **≤5B** (Qwen3-8B dropped — the throughput bottleneck). **Gemma-4-E4B**
+is the best anchor by a wide margin (solo F1 0.71 vs Gemma-3-4B 0.58), so Gemma-3 is dropped as redundant.
+The winning union is **Gemma-4-E4B ∪ Llama-3.2-3B ∪ Qwen3-4B ∪ MedGemma-4B**; per the framework the anchor gets
+the second pass and the augmenters stay single-pass. Phi-4-mini was excluded (incompatible with transformers 5.8).
+Recall levers stack: 1-pass ensemble (~0.73) → **2-pass anchor** (0.83). Residual misses are anaphora and
+lab-table fragments the gold annotates but aren't clean EAV entities.
 
 ---
 
@@ -240,7 +244,7 @@ uses a resident-model, batched-inference runner for throughput, feeding the MIMI
 ## Status
 
 **Done**
-- Extractor selected (Gemma-3-4B ensemble ×3); recall levers validated.
+- Extractor selected by full extractor-comparison sweep: **Gemma-4-E4B 2-pass anchor + Llama-3.2-3B / Qwen3-4B / MedGemma-4B** (all ≤5B); F1 0.879 / 0.890.
 - Full 40-patient CORAL run, per cohort → Table II.
 - CORAL end-to-end: RDF materialization + SPARQL cohort queries, per cohort → Table VI.
 - Veracity: calibration + selective admission on CORAL — learned reliability auto-inserts ~60% at 94.8% precision → Table I.

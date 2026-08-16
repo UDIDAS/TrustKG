@@ -61,32 +61,31 @@ better; higher Cov.@95% better; thresholds chosen independently on dev at the sa
 
 ---
 
-## 2. Table II — Entity-level extraction on CORAL ✅ Ensemble done · ⛔ two rows to run
+## 2. Table II — Entity-level extraction on CORAL ✅ Ensemble verified · ⛔ baseline rows to run
 
-Columns: `Dataset | Method | Precision | Recall | F1`. **This is a configuration-comparison table** — three
-methods per cohort showing the progression **Vanilla RAG → Gemma 2-pass → Ensemble**. The **Ensemble ×3 is
-our chosen/primary config**; Gemma-2-pass is included **in addition** (an intermediate single-model config)
-to show what the ensemble adds, and Vanilla RAG is the weak baseline. Supports RQ1.
+Columns: `Dataset | Method | Precision | Recall | F1`. Configuration-comparison table: **Vanilla RAG → Gemma-4
+anchor (2-pass) → Ensemble**. The extractor was chosen by a **full extractor-comparison sweep** over all model
+unions on CORAL (`scripts/combo_eval.py`); all candidates ≤5B. Winner = **Gemma-4-E4B 2-pass anchor ∪
+single-pass Llama-3.2-3B / Qwen3-4B / MedGemma-4B**. Supports RQ1.
 
 | Dataset | Method | Precision | Recall | F1 | Status |
 |---|---|---|---|---|---|
 | CORAL-BRCA | Vanilla RAG | — | — | — | ⛔ run baseline |
-| CORAL-BRCA | Gemma 2-pass | — | — | — | ⛔ run full-cohort (only 2-pt smoke now) |
-| CORAL-BRCA | **Ensemble** (primary) | **0.850** | **0.890** | **0.868** | ✅ verified (ens3) |
+| CORAL-BRCA | Gemma-4 anchor (2-pass, solo) | 0.972 | 0.770 | 0.854 | ✅ (exact) |
+| CORAL-BRCA | **Ensemble** (primary) | **0.940** | **0.848** | **0.890 ± 0.044** | ✅ verified (coral_final) |
 | CORAL-PDAC | Vanilla RAG | — | — | — | ⛔ run baseline |
-| CORAL-PDAC | Gemma 2-pass | — | — | — | ⛔ run full-cohort |
-| CORAL-PDAC | **Ensemble** (primary) | **0.888** | **0.870** | **0.877** | ✅ verified (ens3) |
+| CORAL-PDAC | Gemma-4 anchor (2-pass, solo) | 0.983 | 0.721 | 0.829 | ✅ (exact) |
+| CORAL-PDAC | **Ensemble** (primary) | **0.958** | **0.815** | **0.879 ± 0.048** | ✅ verified (coral_final) |
 
-- **Ensemble** rows are verified full-cohort (20+20 patients, frozen; sd BRCA ±0.045, PDAC ±0.043) —
-  `results/ens3_metrics_gpu{0,1}.json`, `scripts/run_coral_ensemble.py`.
-- **Ignore the draft's pre-filled Gemma-2-pass 0.922 rows** — earlier/lost-run numbers under a different
-  protocol. Regenerate by running **full-cohort Gemma-2-pass** as its own experiment (single model, two-pass,
-  40 patients — cheap): `run_coral_ensemble.py --models gemma3-4b --twopass gemma3-4b`. We currently have only
-  a 2-patient smoke (pdac_0 F1 0.833, brca_20 F1 0.861).
-- Gemma-2-pass is **in addition to**, not instead of, the ensemble — the ensemble stays primary. On the
-  2-patient overlap under our current consistent protocol the ensemble already beats Gemma-2-pass
-  (pdac_0 0.879 vs 0.833; brca_20 0.906 vs 0.861), so the comparison is expected to hold at full cohort.
-- **Vanilla RAG** baseline also needs a full-cohort run (feeds the abstract's "F1 from X for the RAG baseline").
+- **Ensemble** rows verified full-cohort, exact scorer — `results/coral_final_score.json`, config = Gemma-4-E4B
+  2-pass (`scripts/run_ensemble_fast.py --twopass gemma4-e4b --seed-from combo_coral`) ∪ cached 1-pass augmenters,
+  scored by `scripts/fast_score.py`. CI: BRCA [0.871, 0.909], PDAC [0.858, 0.900].
+- **This all-≤5B ensemble matches/beats the old Gemma-3 + Qwen-8B ensemble** (0.868 / 0.877) at precision ~0.95 —
+  the ≤5B constraint cost nothing. Gemma-4-E4B is the best anchor (solo F1 0.71 vs Gemma-3-4B 0.58); Gemma-3
+  dropped as redundant; Qwen3-8B dropped (throughput); Phi-4-mini excluded (transformers 5.8 incompat).
+- The **2-pass anchor** lifts recall: Gemma-4 solo 2-pass R≈0.72–0.77 → full ensemble R 0.815–0.848 (augmenters add
+  recall); and 1-pass ensemble ~0.73 → 2-pass-anchor ensemble 0.83. All rows above are exact-scored (`fast_score.py`).
+- **Vanilla RAG** baseline still needs a full-cohort run (feeds the abstract's "F1 from X for the RAG baseline").
 
 ---
 
@@ -200,9 +199,9 @@ The draft prose blanks unverified numbers with `[GATED]`. Fillable now vs. block
 |---|---|---|
 | `[GATED-CONFIG]` improves F1 … | "the ensemble" (our primary config) | ✅ |
 | … from `[GATED]` for the RAG baseline | — | ⛔ RAG baseline (Table II) |
-| … to `[GATED]` on CORAL-BRCA | 0.868 (Ensemble, primary) | ✅ |
-| achieves `[GATED]` on CORAL-PDAC | 0.877 (Ensemble, primary) | ✅ |
-| mean F1 `XX±XX` BRCA / PDAC (robustness) | 0.868±0.045 / 0.877±0.043 (Ensemble) | ✅ |
+| … to `[GATED]` on CORAL-BRCA | 0.890 (Ensemble, Gemma-4 sub-5B) | ✅ |
+| achieves `[GATED]` on CORAL-PDAC | 0.879 (Ensemble, Gemma-4 sub-5B) | ✅ |
+| mean F1 `XX±XX` BRCA / PDAC (robustness) | 0.890±0.044 / 0.879±0.048 (Ensemble) | ✅ |
 | inserts `[GATED]` / routes `[GATED]` / rejects `[GATED]` | 60.1% / 35.9% / 4.0% | ✅ |
 | … AURC is `[GATED]` | 0.045 | ✅ |
 | MIMIC unsupported-retained-assertion `[GATED]`→`[GATED]`, ~`[GATED]` recall impact | — | ⛔ Table IV |

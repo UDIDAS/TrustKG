@@ -98,7 +98,11 @@ def main():
     ap.add_argument("--gen-batch", type=int, default=0, help="0 = per-model default (GEN_BATCH); else uniform override")
     ap.add_argument("--max-new", type=int, default=4096)
     ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument("--patients", nargs="*", default=None, help="restrict to these patient ids (split work across GPUs)")
     ap.add_argument("--tag", default=None)
+    ap.add_argument("--seed-from", default=None,
+                    help="reuse cached 1-pass triples from this tag as pass-1: 1-pass models are copied "
+                         "(no GPU), 2-pass models load cached pass-1 and only compute pass-2")
     ap.add_argument("--extract-only", action="store_true",
                     help="cache per-model triples only; skip union+validate (for parallel combo sweeps)")
     args = ap.parse_args()
@@ -110,6 +114,8 @@ def main():
     from src.extraction.validation import validate_patient_triples
 
     items = load_items(args.dataset, args.limit)
+    if args.patients:
+        keep = set(args.patients); items = [it for it in items if it["id"] in keep]
     root = Path("results/extraction") / tag
     (root / "union").mkdir(parents=True, exist_ok=True)
     (root / "filtered").mkdir(parents=True, exist_ok=True)
@@ -143,7 +149,12 @@ def main():
                  model, "2pass" if model in twopass else "1pass", gb, len(todo), len(items))
         for b in range(0, len(todo), args.note_batch):
             batch = todo[b:b + args.note_batch]
-            p1, nc = batched_extract(batch, mentions_by_id, model, args.gpu, gb, args.max_new)
+            if args.seed_from:                        # reuse cached pass-1 (no GPU for pass-1)
+                sd = Path("results/extraction") / args.seed_from / "bymodel" / model
+                p1 = {it["id"]: json.load(open(sd / f"{it['id']}.json")).get("triples", []) for it in batch}
+                nc = 0
+            else:
+                p1, nc = batched_extract(batch, mentions_by_id, model, args.gpu, gb, args.max_new)
             tot_chunks += nc
             if model in twopass:
                 seeds = {}
