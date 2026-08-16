@@ -3,7 +3,9 @@
 # after a cluster restart. IDEMPOTENT: relaunches only models with <40 cached patients,
 # and only if nothing is already running. Per-model caches + NER live in results/
 # (persistent /home NFS) and survive restart; HF weights in /scratch re-download on first
-# load (HF_TOKEN from .env covers the gated ones). Safe to run anytime.
+# load (HF_TOKEN from .env covers the gated Gemma/Llama/MedGemma). Safe to run anytime.
+# Pool: gemma3-4b, medgemma-4b (GPU0) | llama32-3b, qwen3-4b (GPU1).  (phi4-mini dropped:
+# broken on transformers 5.8 -> ImportError LossKwargs.)
 set -u
 cd /home/ud3d4/Desktop/TrustKG || exit 1
 PY=/home/ud3d4/.conda/envs/llmft/bin/python
@@ -23,9 +25,9 @@ if pgrep -f "run_ensemble_fast.py --dataset coral" >/dev/null 2>&1; then
   echo "$(date) resume_combo: extraction already running, skip" >> "$LOG"; exit 0
 fi
 
-echo "$(date) resume_combo: start (gemma=$(ccnt gemma3-4b) llama=$(ccnt llama32-3b) phi=$(ccnt phi4-mini) qwen=$(ccnt qwen3-4b) of 40)" >> "$LOG"
-# GPU0 chain: gemma, phi | GPU1 chain: llama, qwen  (incomplete models only)
-( for m in gemma3-4b phi4-mini; do [ "$(ccnt "$m")" -lt 40 ] && run "$m" 0; done ) &
-( for m in llama32-3b qwen3-4b; do [ "$(ccnt "$m")" -lt 40 ] && run "$m" 1; done ) &
+echo "$(date) resume_combo: start (gemma=$(ccnt gemma3-4b) medgemma=$(ccnt medgemma-4b) llama=$(ccnt llama32-3b) qwen=$(ccnt qwen3-4b) of 40)" >> "$LOG"
+# GPU0 chain: gemma, medgemma | GPU1 chain: llama, qwen  (incomplete models only)
+( for m in gemma3-4b medgemma-4b; do [ "$(ccnt "$m")" -lt 40 ] && run "$m" 0; done ) &
+( for m in llama32-3b qwen3-4b;   do [ "$(ccnt "$m")" -lt 40 ] && run "$m" 1; done ) &
 wait
-echo "$(date) resume_combo: chains exited (gemma=$(ccnt gemma3-4b) llama=$(ccnt llama32-3b) phi=$(ccnt phi4-mini) qwen=$(ccnt qwen3-4b))" >> "$LOG"
+echo "$(date) resume_combo: chains exited (gemma=$(ccnt gemma3-4b) medgemma=$(ccnt medgemma-4b) llama=$(ccnt llama32-3b) qwen=$(ccnt qwen3-4b))" >> "$LOG"
