@@ -3,14 +3,19 @@
 Verified via a multi-source deep-research pass (2026-08-16; 15 primary sources, adversarially
 verified). This is internal positioning guidance for the IEEE BigData 2026 submission — a map of
 the closest current works, the honest novelty delta, and must-cites. **Verdict: timely and
-relevant; novelty is real but NARROW — lead with the calibration + risk-coverage + tiered
-admission-control intersection, and differentiate hard against the two near-neighbors below.**
+relevant; lead with the calibration + risk-coverage + tiered admission-control intersection.**
+
+**Note on 2601.01844:** this is *our own prior arXiv preprint* — the preliminary version TRUST-KG
+extends. Extending your own preprint into a full venue paper is standard (arXiv is NOT "prior
+publication" for IEEE/CS venues), so it is a **self-citation and foundation, not a novelty risk**.
+Cite it as the preliminary version and foreground the new contributions. The works to actually
+*differentiate against* are the independent ones (DIAL-KG, MedKGent, SAC-KG, SelectLLM, Infherno).
 
 ## Must-cite works
 
 | Work (arXiv / venue) | What it does | Bounds our novelty because… |
 |---|---|---|
-| **2601.01844** (Jan 2026, RAG multi-LLM clinical KG) | Builds clinical KGs on the **same CORAL PDAC/BRCA** data, **same EAV** formulation, multi-LLM consensus, entropy trust, composite trust T(τ)=λ₁R+λ₂C+λ₃J @ δ=0.65, ontology (SNOMED/LOINC/RxNorm/ICD/GO), FHIR templates, OWL/RDFS checks, Grok-3 contradiction | **Near-twin, appears same author group → mandatory self-citation + top incremental-delta risk.** Pre-empts our ontology/FHIR/contradiction validation layers. |
+| **2601.01844** (Jan 2026, RAG multi-LLM clinical KG) | Builds clinical KGs on the **same CORAL PDAC/BRCA** data, **same EAV** formulation, multi-LLM consensus, entropy trust, composite trust T(τ)=λ₁R+λ₂C+λ₃J @ δ=0.65, ontology (SNOMED/LOINC/RxNorm/ICD/GO), FHIR templates, OWL/RDFS checks, Grok-3 contradiction | **Our own preliminary arXiv preprint** — TRUST-KG is its extended version. Self-cite as prior work / foundation; foreground the new contributions (below). Not a novelty risk. |
 | **DIAL-KG** (2603.20059, Mar 2026) | verify-before-insert "Governance Adjudication" (Evidence + Logical + Evolutionary-Intent) filtering facts BEFORE KG insertion | Owns "construction-time verification" as a named, active direction. |
 | **MedKGent** (2508.12393, npj Digital Medicine 2025) | 2-agent LLM KG construction; sampling-based confidence; temporal graph | LLM-KG-construction SOTA w/ confidence scoring. |
 | **SAC-KG** (2410.02811, ACL 2024) | Generator–Verifier–Pruner; rule-based error correction | Dedicated verification stage precedent. |
@@ -33,11 +38,12 @@ No cited competitor combines **all** of:
 The **Big-Data data-veracity / ingestion-governance** framing is timely and defensible; the
 **Table I** calibration+selective-admission result (E1-E2) is our strongest, least-contested claim.
 
-## What the paper MUST do to survive review
+## What the paper should do
 
-1. **Sharpen the delta vs 2601.01844 explicitly** — else it reads as an incremental extension of prior same-group work. The deltas above (esp. calibration + Insert/Review/Reject + sub-5B + MIMIC) must be stated as such.
-2. **Report a genuine calibrated risk–coverage curve** with a tunable operating point (not a single fixed threshold like the competitors). Prefer **AUGRC**, or justify AURC/ECE. This is exactly what Table I does — foreground it.
+1. **Position 2601.01844 as the preliminary version and make the new contributions the headline.** Extending your own preprint is standard and legitimate; just foreground the deltas (calibration + Insert/Review/Reject + sub-5B + MIMIC + hybrid retrieval) so the venue paper's added contribution is unmistakable — since arXiv is public, a reviewer may pull the preprint up.
+2. **Report a genuine calibrated risk–coverage curve** with a tunable operating point (not a single fixed threshold like the independent competitors). Prefer **AUGRC**, or justify AURC/ECE. This is exactly what Table I does — foreground it.
 3. Ideally show **construction-time admission control yields downstream SPARQL/query benefits** over retrieval-time (GraphRAG) filtering.
+4. **Differentiate against the independent works** (DIAL-KG, MedKGent, SAC-KG, SelectLLM, Infherno) — that's where related-work positioning matters, not the self-citation.
 
 ## Caveats
 - Several sources are 2025–2026 preprints; 2601.01844 will still be fresh at review time.
