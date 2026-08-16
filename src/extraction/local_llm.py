@@ -28,6 +28,7 @@ MODEL_REGISTRY = {
     "qwen3-8b": "Qwen/Qwen3-8B",
     "gemma3-4b": "google/gemma-3-4b-it",   # paper's "Gemma 3 4B" (official; replaces broken google/gemma-4-E4B-it)
     "medgemma-4b": "google/medgemma-4b-it",   # medical-domain Gemma (4.3B) — clinical augmenter, sub-5B
+    "gemma4-e4b": "google/gemma-4-E4B-it",   # newest Gemma 4 (8B total / effective-4B, open) — modern anchor candidate
     "qwen3-4b": "Qwen/Qwen3-4B",   # open 4B — architectural-diversity augmenter, sub-5B (drop-in for slow Qwen3-8B)
     "phi4-mini": "microsoft/Phi-4-mini-instruct",   # open 3.8B — Microsoft-family augmenter, sub-5B
     "llama32-3b": "meta-llama/Llama-3.2-3B-Instruct",

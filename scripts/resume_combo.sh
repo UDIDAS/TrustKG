@@ -26,8 +26,8 @@ if pgrep -f "run_ensemble_fast.py --dataset coral" >/dev/null 2>&1; then
 fi
 
 echo "$(date) resume_combo: start (gemma=$(ccnt gemma3-4b) medgemma=$(ccnt medgemma-4b) llama=$(ccnt llama32-3b) qwen=$(ccnt qwen3-4b) of 40)" >> "$LOG"
-# GPU0 chain: gemma, medgemma | GPU1 chain: llama, qwen  (incomplete models only)
-( for m in gemma3-4b medgemma-4b; do [ "$(ccnt "$m")" -lt 40 ] && run "$m" 0; done ) &
+# GPU0 chain: gemma, medgemma, gemma4-e4b | GPU1 chain: llama, qwen  (incomplete models only)
+( for m in gemma3-4b medgemma-4b gemma4-e4b; do [ "$(ccnt "$m")" -lt 40 ] && run "$m" 0; done ) &
 ( for m in llama32-3b qwen3-4b;   do [ "$(ccnt "$m")" -lt 40 ] && run "$m" 1; done ) &
 wait
 echo "$(date) resume_combo: chains exited (gemma=$(ccnt gemma3-4b) medgemma=$(ccnt medgemma-4b) llama=$(ccnt llama32-3b) qwen=$(ccnt qwen3-4b))" >> "$LOG"

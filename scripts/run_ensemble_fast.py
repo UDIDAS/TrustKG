@@ -29,7 +29,8 @@ log = logging.getLogger("ens_fast")
 
 # per-model generation batch size — the 8B model OOMs at large batch on long clinical
 # notes (KV cache for long input + max_new), so size it down for bigger models.
-GEN_BATCH = {"gemma3-4b": 6, "qwen3-8b": 2, "qwen3-4b": 2, "medgemma-4b": 6, "phi4-mini": 4, "llama32-3b": 4}
+GEN_BATCH = {"gemma3-4b": 6, "qwen3-8b": 2, "qwen3-4b": 2, "medgemma-4b": 6,
+             "gemma4-e4b": 4, "phi4-mini": 4, "llama32-3b": 4}   # gemma4 = 8B, large vocab -> batch 4
 
 
 def dedup(ts):
