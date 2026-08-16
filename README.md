@@ -45,6 +45,50 @@ graph size.
 
 ---
 
+## Related work & positioning
+
+Clinical KG construction from free text with LLMs is an active 2024–2026 direction, and *trust /
+verification* is its frontier — but existing methods stop short of a **calibrated, tunable admission
+decision per fact**. TRUST-KG sits at the intersection of three lines and fills the gap where they meet.
+
+- **LLM-based (clinical) KG construction with a verification stage.** MedKGent (npj Digital Medicine
+  2025; arXiv:2508.12393) scores triples by self-consistency frequency and filters at a fixed threshold;
+  SAC-KG (ACL 2024; arXiv:2410.02811) adds a rule-based Verifier–Pruner that *corrects* errors; DIAL-KG
+  (arXiv:2603.20059) filters facts at construction time via multi-stage "governance" adjudication. All
+  verify — but with **single-threshold / rule-based / binary** decisions; none calibrate reliability or
+  expose a quality–coverage operating point.
+- **Selective prediction & calibration.** SelectLLM (NeurIPS 2025) and the risk–coverage literature
+  (e.g., AUGRC, NeurIPS 2024) provide calibrated abstention and the correct evaluation apparatus (ECE,
+  risk–coverage) — but for *question answering*, and as a two-way answer/abstain, not per-triple KG
+  ingestion with a tiered policy.
+- **FHIR / ontology-grounded clinical IE.** Infherno (EACL 2026; arXiv:2507.12261) converts notes to
+  HL7 FHIR resources with terminology grounding and schema validation, treating correctness as a
+  **binary** structurally-valid outcome rather than a graduated, calibrated one.
+
+**The gap TRUST-KG fills.** None of these unifies **probability calibration + risk–coverage selective
+prediction + a three-way Insert / Review / Reject admission policy applied per triple at construction
+time**, nor frames KG construction as a **Big-Data data-veracity / ingestion-governance** problem. That
+intersection — a calibrated, tunable gate deciding *what is trustworthy enough to persist* before
+materialization — is TRUST-KG's position. It extends a preliminary CORAL-based clinical-KG study
+(arXiv:2601.01844) by adding the calibration + selective-admission layer, a sub-5B open-weight ensemble,
+MIMIC-scale evaluation, and hybrid BM25 + MedCPT + graph retrieval.
+
+| Closest work | Shares with TRUST-KG | TRUST-KG adds |
+|---|---|---|
+| DIAL-KG | construction-time verify-before-store | calibration + risk–coverage + **tiered** admission (vs binary filter) |
+| SelectLLM / AUGRC | calibrated selective prediction, risk–coverage | applied to **per-triple KG ingestion**; 3-way Insert/Review/Reject |
+| MedKGent | per-triple confidence + filtering | calibration vs heuristic threshold; clinical notes + FHIR / 5-layer validation |
+| SAC-KG | dedicated verification stage | reliability **scoring + admission** vs rule-based error correction |
+| Infherno | note→FHIR, terminology grounding | graduated calibrated confidence + admission into a **queryable KG** |
+
+**On comparability.** These works use different datasets and outputs (literature vs patient KGs; FHIR
+resources vs RDF), so no shared external benchmark exists. TRUST-KG therefore compares **on its own gold
+data**: prior-style single-threshold *heuristic trust* vs *learned + calibrated* selective admission on
+held-out CORAL (Table I), against a Vanilla-RAG floor (Table II), plus the direct delta over the
+preliminary version above. (Fuller internal positioning + must-cites: [docs/RELATED_WORK.md](docs/RELATED_WORK.md).)
+
+---
+
 ## Pipeline
 
 ```
