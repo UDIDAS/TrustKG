@@ -33,6 +33,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", default="combo_coral")
     ap.add_argument("--min-size", type=int, default=1, help="smallest combo size to report")
+    ap.add_argument("--models", nargs="*", default=None,
+                    help="restrict sweep to these models (default: all complete caches under bymodel/)")
+    ap.add_argument("--require-full", type=int, default=40,
+                    help="only include models with >= this many cached patients (skip in-progress)")
     args = ap.parse_args()
 
     from src.data.reader import load_coral_documents
@@ -40,10 +44,15 @@ def main():
 
     docs = {d.patient_id: d for d in load_coral_documents()}
     bym = Path("results/extraction") / args.tag / "bymodel"
-    models = sorted(p.name for p in bym.iterdir() if p.is_dir())
+    cand = sorted(p.name for p in bym.iterdir() if p.is_dir())
+    if args.models:
+        cand = [m for m in cand if m in args.models]
+    # only sweep models whose cache is complete (>= require-full patients), so in-progress models don't skew unions
+    models = [m for m in cand if len(list((bym / m).glob("*.json"))) >= args.require_full]
+    skipped = [m for m in cand if m not in models]
     if not models:
-        sys.exit(f"no per-model caches under {bym} — run run_ensemble_fast.py --extract-only first")
-    print(f"models cached: {models}")
+        sys.exit(f"no complete per-model caches (>= {args.require_full}) under {bym}")
+    print(f"models swept: {models}" + (f"  | skipped (incomplete): {skipped}" if skipped else ""))
 
     # load per-model triples: model -> pid -> [triples]
     tri = {m: {} for m in models}
