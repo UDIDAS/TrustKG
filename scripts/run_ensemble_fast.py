@@ -29,7 +29,7 @@ log = logging.getLogger("ens_fast")
 
 # per-model generation batch size — the 8B model OOMs at large batch on long clinical
 # notes (KV cache for long input + max_new), so size it down for bigger models.
-GEN_BATCH = {"gemma3-4b": 6, "qwen3-8b": 2, "llama32-3b": 4}
+GEN_BATCH = {"gemma3-4b": 6, "qwen3-8b": 2, "qwen3-4b": 2, "medgemma-4b": 6, "phi4-mini": 4, "llama32-3b": 4}
 
 
 def dedup(ts):
@@ -98,6 +98,8 @@ def main():
     ap.add_argument("--max-new", type=int, default=4096)
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--tag", default=None)
+    ap.add_argument("--extract-only", action="store_true",
+                    help="cache per-model triples only; skip union+validate (for parallel combo sweeps)")
     args = ap.parse_args()
     tag = args.tag or f"ensfast_{args.dataset}"
     twopass = set(args.twopass)
@@ -161,6 +163,10 @@ def main():
                      model, min(b + args.note_batch, len(todo)), len(todo), tot_chunks,
                      ((b + len(batch)) / (el / 3600)) if el > 0 else 0, tot_chunks / el if el > 0 else 0)
     phaseA = time.time() - t0
+    if args.extract_only:
+        log.info("EXTRACT-ONLY done: %d models cached under %s/bymodel | Phase A %.1f notes/hr",
+                 len(args.models), root, len(items) / (phaseA / 3600) if phaseA > 0 else 0)
+        return
 
     # ── Phase B: union across models + validate (CPU) ──
     from src.extraction.evaluate import evaluate_single_model

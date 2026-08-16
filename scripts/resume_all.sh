@@ -39,4 +39,10 @@ fi
 #    (results/mimic_*_fast_metrics.json), so it's safe to (re)start when we do.
 m3=$(count results/mimic_mimiciii_fast_metrics.json); m4=$(count results/mimic_mimiciv_fast_metrics.json)
 
+# ── Combo extractor-comparison sweep (run_ensemble_fast, tag=combo_coral): resume if present ──
+if [ -d results/extraction/combo_coral/bymodel ]; then
+  nohup bash scripts/resume_combo.sh >/dev/null 2>&1 &
+  echo "$(date) resume_all: invoked resume_combo.sh (combo sweep)" >> "$LOG"
+fi
+
 echo "$(date) resume_all: done (coral $c0/$c1 of 20; mimic-fast $m3/$m4 of 400; MIMIC auto-start held)" >> "$LOG"

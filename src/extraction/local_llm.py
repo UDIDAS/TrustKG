@@ -27,6 +27,9 @@ _TMP_CACHE = "/tmp/ud3d4_hf_cache"
 MODEL_REGISTRY = {
     "qwen3-8b": "Qwen/Qwen3-8B",
     "gemma3-4b": "google/gemma-3-4b-it",   # paper's "Gemma 3 4B" (official; replaces broken google/gemma-4-E4B-it)
+    "medgemma-4b": "google/medgemma-4b-it",   # medical-domain Gemma (4.3B) — clinical augmenter, sub-5B
+    "qwen3-4b": "Qwen/Qwen3-4B",   # open 4B — architectural-diversity augmenter, sub-5B (drop-in for slow Qwen3-8B)
+    "phi4-mini": "microsoft/Phi-4-mini-instruct",   # open 3.8B — Microsoft-family augmenter, sub-5B
     "llama32-3b": "meta-llama/Llama-3.2-3B-Instruct",
     "phi-moe": "microsoft/Phi-mini-MoE-instruct",   # small MoE (BROKEN on transformers 5.8: remote code needs is_torch_fx_available)
     "olmoe-1b7b": "allenai/OLMoE-1B-7B-0924-Instruct",   # small MoE (7B total / 1B active), native transformers, no remote code / flash_attn
