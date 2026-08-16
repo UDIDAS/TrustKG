@@ -6,8 +6,13 @@ mirrors the draft's *exact* structure (same columns, same rows). Update Overleaf
 Legend:
 - ✅ **verified** — reproduced in this repo, frozen (seeded where stochastic); generating script named.
 - ⛔ **pending** — needs an experiment we have not run yet (named below).
-- ⚠️ **in draft but not backed here** — a value currently in the draft that this repo cannot
-  reproduce/verify, or that conflicts with our verified numbers. Needs a decision or a run.
+- ⚠️ **draft has a stale pre-fill — ignore it** — the current PDF shows a number in this cell that did
+  **not** come from our current experiments (earlier/lost runs, different protocol). Treat as pending and
+  regenerate.
+
+> **Every number in the paper comes from our own experiments.** The current PDF has some cells pre-filled
+> (e.g. Table II "Gemma 2-pass" = 0.922, all of Table V's retrieval numbers) from earlier/lost runs — these
+> are **not authoritative; ignore them** and regenerate every value from a run in this repo.
 
 All numbers are entity-level unless noted. CORAL is reported **per cohort** (PDAC = ids 0–19,
 BRCA = ids 20–39); we never pool the two cohorts for extraction metrics.
@@ -56,32 +61,32 @@ better; higher Cov.@95% better; thresholds chosen independently on dev at the sa
 
 ---
 
-## 2. Table II — Entity-level extraction on CORAL ⚠️ PARTIAL (conflict + pending baseline)
+## 2. Table II — Entity-level extraction on CORAL ✅ Ensemble done · ⛔ two rows to run
 
-Columns: `Dataset | Method | Precision | Recall | F1`.
+Columns: `Dataset | Method | Precision | Recall | F1`. **This is a configuration-comparison table** — three
+methods per cohort showing the progression **Vanilla RAG → Gemma 2-pass → Ensemble**. The **Ensemble ×3 is
+our chosen/primary config**; Gemma-2-pass is included **in addition** (an intermediate single-model config)
+to show what the ensemble adds, and Vanilla RAG is the weak baseline. Supports RQ1.
 
 | Dataset | Method | Precision | Recall | F1 | Status |
 |---|---|---|---|---|---|
-| CORAL-BRCA | Vanilla RAG | — | — | — | ⛔ RAG baseline not run |
-| CORAL-BRCA | Gemma 2-pass | 0.969 | 0.879 | 0.922 | ⚠️ **draft value — not reproduced here** |
-| CORAL-BRCA | **Ensemble** | **0.850** | **0.890** | **0.868** | ✅ verified (ens3) |
-| CORAL-PDAC | Vanilla RAG | — | — | — | ⛔ RAG baseline not run |
-| CORAL-PDAC | Gemma 2-pass | 0.956 | 0.890 | 0.922 | ⚠️ **draft value — not reproduced here** |
-| CORAL-PDAC | **Ensemble** | **0.888** | **0.870** | **0.877** | ✅ verified (ens3) |
+| CORAL-BRCA | Vanilla RAG | — | — | — | ⛔ run baseline |
+| CORAL-BRCA | Gemma 2-pass | — | — | — | ⛔ run full-cohort (only 2-pt smoke now) |
+| CORAL-BRCA | **Ensemble** (primary) | **0.850** | **0.890** | **0.868** | ✅ verified (ens3) |
+| CORAL-PDAC | Vanilla RAG | — | — | — | ⛔ run baseline |
+| CORAL-PDAC | Gemma 2-pass | — | — | — | ⛔ run full-cohort |
+| CORAL-PDAC | **Ensemble** (primary) | **0.888** | **0.870** | **0.877** | ✅ verified (ens3) |
 
-**⚠️ Reconciliation needed (affects the abstract F1 claim and the "primary configuration" framing):**
-- The **Ensemble** rows are verified full-cohort (20+20 patients, frozen): BRCA 0.868 F1, PDAC 0.877 F1
-  (`results/ens3_metrics_gpu{0,1}.json`, `scripts/run_coral_ensemble.py`). sd: BRCA ±0.045, PDAC ±0.043.
-- The **Gemma 2-pass** rows already in the draft (0.969/0.879/**0.922**, 0.956/0.890/**0.922**) are **not
-  reproduced anywhere in this repo** — they appear to be from the earlier (lost) runs. Our only current
-  Gemma-2-pass data is a **2-patient smoke** (pdac_0 F1 0.833, brca_20 F1 0.861), not full-cohort. The two
-  cohorts also share an identical 0.922 F1, which is unusual for real per-cohort numbers.
-- **Consequence:** as written, draft Table II shows Gemma-2-pass F1 (0.922) *above* our verified Ensemble F1
-  (0.868/0.877) — the ensemble trades precision for recall and nets lower F1. So either the "Ensemble is the
-  primary config" story or the numbers need to align.
-- **To resolve:** run **full-cohort Gemma-2-pass** (single model, 40 patients — cheap) to verify or replace
-  the 0.922 rows, and decide which configuration is "primary." Until then, the abstract's
-  "F1 … to X on BRCA / X on PDAC" should cite whichever config Table II designates as primary.
+- **Ensemble** rows are verified full-cohort (20+20 patients, frozen; sd BRCA ±0.045, PDAC ±0.043) —
+  `results/ens3_metrics_gpu{0,1}.json`, `scripts/run_coral_ensemble.py`.
+- **Ignore the draft's pre-filled Gemma-2-pass 0.922 rows** — earlier/lost-run numbers under a different
+  protocol. Regenerate by running **full-cohort Gemma-2-pass** as its own experiment (single model, two-pass,
+  40 patients — cheap): `run_coral_ensemble.py --models gemma3-4b --twopass gemma3-4b`. We currently have only
+  a 2-patient smoke (pdac_0 F1 0.833, brca_20 F1 0.861).
+- Gemma-2-pass is **in addition to**, not instead of, the ensemble — the ensemble stays primary. On the
+  2-patient overlap under our current consistent protocol the ensemble already beats Gemma-2-pass
+  (pdac_0 0.879 vs 0.833; brca_20 0.906 vs 0.861), so the comparison is expected to hold at full cohort.
+- **Vanilla RAG** baseline also needs a full-cohort run (feeds the abstract's "F1 from X for the RAG baseline").
 
 ---
 
@@ -124,14 +129,15 @@ Columns: `Dataset | URR Before | URR After | Recall Impact` (URR = unsupported-r
 
 | Method | R@5 | R@10 | MRR | nDCG | Evid. P | Status |
 |---|---|---|---|---|---|---|
-| BM25 | 0.209 | 0.209 | 0.207 | 0.992 | 0.695 | ⚠️ draft value, no backing script |
-| MedCPT | 0.996 | 1.000 | 0.874 | 0.897 | 0.188 | ⚠️ |
-| Graph | 0.396 | 0.396 | 0.396 | 0.870 | 1.000 | ⚠️ |
-| Hybrid | 0.996 | 0.996 | 0.876 | 0.897 | 0.299 | ⚠️ |
+| BM25 | — | — | — | — | — | ⛔ our retrieval-eval |
+| MedCPT | — | — | — | — | — | ⛔ |
+| Graph | — | — | — | — | — | ⛔ |
+| Hybrid | — | — | — | — | — | ⛔ |
 
-- ⚠️ Retrieval (BM25 + MedCPT + graph-neighborhood) is implemented in the pipeline, but **there is no
-  evaluation harness in this repo that emits R@k / MRR / nDCG / evidence-precision** — these Panel-A numbers
-  **cannot be reproduced or verified here**. Provenance likely the earlier runs. Needs a retrieval-eval script.
+- ⛔ Retrieval (BM25 + MedCPT + graph-neighborhood) is implemented in the pipeline, but **there is no
+  evaluation harness that emits R@k / MRR / nDCG / evidence-precision.** **Ignore the draft's pre-filled
+  numbers** (0.209 / 0.996 / …, earlier runs) — build a retrieval-eval script (query = gold entity, corpus =
+  note chunks; score each retriever + the hybrid fusion) to generate this panel ourselves. Supports RQ1.
 
 **Panel B — reliability evidence ablation.** Columns: `Configuration | ECE | AURC`.
 
@@ -192,11 +198,11 @@ The draft prose blanks unverified numbers with `[GATED]`. Fillable now vs. block
 
 | Location / phrase | Value | Status |
 |---|---|---|
-| `[GATED-CONFIG]` improves F1 … | "the two-pass ensemble" (⚠️ but see Table II config decision) | conditional |
+| `[GATED-CONFIG]` improves F1 … | "the ensemble" (our primary config) | ✅ |
 | … from `[GATED]` for the RAG baseline | — | ⛔ RAG baseline (Table II) |
-| … to `[GATED]` on CORAL-BRCA | 0.868 (Ensemble) *or* draft's Gemma-2pass 0.922 — per Table II decision | ⚠️ |
-| achieves `[GATED]` on CORAL-PDAC | 0.877 (Ensemble) *or* 0.922 — per Table II decision | ⚠️ |
-| mean F1 `XX±XX` BRCA / PDAC (robustness) | 0.868±0.045 / 0.877±0.043 (Ensemble) | ✅ (config-dependent) |
+| … to `[GATED]` on CORAL-BRCA | 0.868 (Ensemble, primary) | ✅ |
+| achieves `[GATED]` on CORAL-PDAC | 0.877 (Ensemble, primary) | ✅ |
+| mean F1 `XX±XX` BRCA / PDAC (robustness) | 0.868±0.045 / 0.877±0.043 (Ensemble) | ✅ |
 | inserts `[GATED]` / routes `[GATED]` / rejects `[GATED]` | 60.1% / 35.9% / 4.0% | ✅ |
 | … AURC is `[GATED]` | 0.045 | ✅ |
 | MIMIC unsupported-retained-assertion `[GATED]`→`[GATED]`, ~`[GATED]` recall impact | — | ⛔ Table IV |
@@ -211,10 +217,10 @@ The draft prose blanks unverified numbers with `[GATED]`. Fillable now vs. block
 1. **MIMIC oncology extraction** — unlocks Tables **IV, VII**, the MIMIC rows of **VI**, and the 840-record
    abstract totals. Data is present; the run is **stalled** (queue-watcher died in the cluster restart and
    `resume_all.sh` only resumed CORAL). Needs a manual kick: `scripts/run_mimic_fast.py` on both GPUs.
-2. **Full-cohort Gemma-2-pass** (cheap) — verify/replace Table II's 0.922 rows and settle the "primary
-   configuration" question (affects the abstract F1 claim).
-3. **Vanilla-RAG baseline** on CORAL — the "from `[GATED]`" F1 in Table II / abstract.
-4. **Retrieval-eval harness** — reproduce/verify Table V Panel A (R@k/MRR/nDCG), currently unbacked.
+2. **Full-cohort Gemma-2-pass** (cheap) — fills Table II's Gemma-2-pass comparison row (in *addition* to the
+   ensemble, which stays primary). `run_coral_ensemble.py --models gemma3-4b --twopass gemma3-4b`.
+3. **Vanilla-RAG baseline** on CORAL — Table II's baseline row + the abstract's "F1 from `[GATED]`".
+4. **Retrieval-eval harness** — generate Table V Panel A (R@k/MRR/nDCG) ourselves; ignore the draft pre-fills.
 5. **Two no-new-run aggregations** — Table III (validation-dimension summary) and Table V Panel B (evidence
    ablation), both from the existing E1–E2 labeled set.
 
