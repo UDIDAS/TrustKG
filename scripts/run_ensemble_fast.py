@@ -36,6 +36,8 @@ GEN_BATCH = {"gemma3-4b": 6, "qwen3-8b": 2, "qwen3-4b": 2, "medgemma-4b": 6,
 def dedup(ts):
     seen, out = set(), []
     for t in ts:
+        if not isinstance(t, dict):
+            continue   # malformed model output can parse to a bare string; skip, don't crash
         k = (str(t.get("entity", "")).lower().strip(), str(t.get("attribute", "")).lower().strip(),
              str(t.get("value", "")).lower().strip())
         if k not in seen:

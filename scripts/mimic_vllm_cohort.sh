@@ -36,6 +36,8 @@ MODELS=(
 echo "[$(ts)][$DS] === START on GPU$GPU port$PORT ==="
 for spec in "${MODELS[@]}"; do
   IFS='|' read -r mtag hfid tp <<< "$spec"
+  if [ "$(ls results/extraction/mimic_${DS}/bymodel/$mtag/*.json 2>/dev/null | wc -l)" -ge 400 ]; then
+    echo "[$(ts)][$DS] $mtag already complete (400 cached), skip"; continue; fi
   start_server "$hfid" || exit 1
   export VLLM_URL="http://localhost:$PORT"
   tpflag=""; [ "$tp" = "1" ] && tpflag="--twopass $mtag"
@@ -45,6 +47,7 @@ for spec in "${MODELS[@]}"; do
       2>&1 | grep --line-buffered -vE "HTTP Request|resolve-cache|Temporary Redirect" || true
   unset VLLM_URL
 done
+for pid in $(nvidia-smi -i "$GPU" --query-compute-apps=pid --format=csv,noheader 2>/dev/null); do kill -9 "$pid" 2>/dev/null; done
 pkill -9 -f "vllm serve .*--port $PORT" 2>/dev/null || true
 
 echo "[$(ts)][$DS] === extraction cached; Phase B union+validate ==="

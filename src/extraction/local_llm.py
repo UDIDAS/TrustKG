@@ -195,13 +195,18 @@ def _generate_vllm(
 
     def _one(pr: tuple[str, str]) -> str:
         sp, up = pr
-        body = json.dumps({
+        payload = {
             "model": served,
             "messages": [{"role": "user", "content": (sp + "\n\n" + up) if sp else up}],
             "max_tokens": max_new_tokens,
             "temperature": max(temperature, 0.0),
             "top_p": 0.95 if temperature > 0 else 1.0,
-        }).encode()
+        }
+        # Qwen3 defaults to "thinking" mode via its chat template; over vLLM the reasoning
+        # eats the whole token budget and leaves no JSON answer (-> empty extractions).
+        if "qwen" in served.lower() or "qwen" in model_name.lower():
+            payload["chat_template_kwargs"] = {"enable_thinking": False}
+        body = json.dumps(payload).encode()
         req = urllib.request.Request(
             endpoint, data=body, headers={"Content-Type": "application/json"})
         for attempt in range(4):
