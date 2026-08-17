@@ -6,8 +6,8 @@
 #   4. flashinfer sampler off (avoids a JIT compile path)
 #   5. all caches -> /scratch (protect the 50GB home quota)
 export CUDA_HOME=/opt/ohpc/pub/spack/apps/linux-zen2/cuda-12.9.1-ok6xerx7xeslx4x46rgcgmfnxp53idxb
-export PATH=/home/ud3d4/.conda/envs/vllm/bin:$CUDA_HOME/bin:$PATH
-export LD_LIBRARY_PATH=/home/ud3d4/.conda/envs/vllm/lib:$CUDA_HOME/lib64:$LD_LIBRARY_PATH
+export PATH=/home/ud3d4/.conda/envs/vllm/bin:$CUDA_HOME/bin:${PATH:-}
+export LD_LIBRARY_PATH=/home/ud3d4/.conda/envs/vllm/lib:$CUDA_HOME/lib64:${LD_LIBRARY_PATH:-}
 export HF_HOME=/scratch/ud3d4/hf_cache HF_HUB_CACHE=/scratch/ud3d4/hf_cache/hub
 export HF_TOKEN=$(grep -h '^HF_TOKEN' /home/ud3d4/Desktop/.env 2>/dev/null | head -1 | cut -d= -f2- | tr -d ' "')
 export VLLM_LOGGING_LEVEL=WARNING VLLM_USE_FLASHINFER_SAMPLER=0
