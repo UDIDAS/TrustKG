@@ -213,7 +213,7 @@ really means ≈90% correct). AURC 0.019 (learned) vs 0.031 (heuristic); Coverag
 **What these three metrics mean** (all judge how *trustworthy the reliability score itself* is; lower is better):
 - **ECE — Expected Calibration Error:** *are the confidences honest?* Bucket facts by their score and check — of
   the facts scored "90% reliable," are ≈90% actually correct? ECE is the average of that gap across buckets.
-  **0.008 = off by <1%** (the hand-tuned heuristic is off by ~17%). This is the headline: the learned score is a
+  **0.008 = off by <1%** (the hand-tuned heuristic is off by ≈17%). This is the headline: the learned score is a
   probability you can trust, so the admission threshold means what it says.
 - **Brier score:** mean-squared error between the predicted probability and the 0/1 outcome. Rewards being
   confident *and* right; punishes confident-but-wrong. Lower = the scores are both **sharp and honest**.
@@ -257,17 +257,22 @@ obtained per source** (≈392 / 394 patients). Access is credential-gated via Ph
 (a few GB vs the 1 TB/month free tier), with a free dry-run estimate and a hard byte-billed cap. Extraction
 uses a resident-model, batched-inference runner for throughput, feeding the MIMIC scale/grounding tables.
 
-**Scale-up = distillation (the Volume contribution).** The verified extractor is a 4-model ensemble with a
-2-pass anchor — high quality but slow (running it across all 800 MIMIC notes is ≈2 days). So we scale by
-**bootstrap distillation**:
-1. **Seed** — run the full ensemble on a ≈200-note MIMIC seed (the high-quality *teacher*).
-2. **Gate** — verify seed coverage + source-grounding *before* scaling.
-3. **Distill** — LoRA-fine-tune **one** model on the seed's trust-filtered triples.
-4. **Deploy** — run that fast single model on the remaining notes (≈1/5 the compute of the ensemble).
+**Scale-up = the same ensemble, accelerated (the Volume / RQ4 story).** The verified extractor is a 4-model
+ensemble with a 2-pass anchor — high quality but generation-heavy (the full HF runner across all 800 MIMIC
+notes is several GPU-days). Rather than *change* the method (e.g. distilling to a single model, which would
+alter the extractor the paper evaluates), we run the **identical ensemble** on all 800 notes and make it
+tractable with **vLLM**: generation is offloaded to a resident vLLM server (continuous batching +
+PagedAttention) while NER / retrieval / validation stay in-process, so **the output is unchanged**. Measured
+end-to-end this is **≈6–10× the HF runner** (≈68 notes/hr·GPU for the 2-pass anchor at batch scale; 1-pass
+augmenters ≈2× faster) — a multi-day run in **≈15–18 h on 2× A6000**, cohort-split (one GPU per cohort),
+per-note checkpointed and reboot-resilient (`scripts/mimic_vllm_cohort.sh` + `scripts/mimic_resume.sh`;
+env recipe in `scripts/vllm_env.sh`). A **seed gate** (first ≈100 notes: triples/note, source-grounding,
+FHIR mix) confirms MIMIC quality before the full corpus commits. The run is instrumented at 25/50/75/100%
+corpus fractions (throughput, retrieval/verification latency, KG growth, cost) → Tables IV, VI, VII.
 
-The distilled model is validated back on the CORAL **test** split (the only gold) to confirm quality is
-preserved. This turns an expensive multi-model *verified* extractor into a *scalable* one — the Volume / RQ4
-story, not a detour. → Tables IV, VI, VII.
+*Distillation* (LoRA-fine-tune one model on the ensemble's trust-filtered triples, validated on the CORAL
+**test** split) stays a compelling **future-work** direction for cheaper deployment — but it is off the
+current paper, which reports the ensemble itself.
 
 ---
 
@@ -280,10 +285,12 @@ story, not a detour. → Tables IV, VI, VII.
 - Veracity: on the Gemma-4 ensemble — learned reliability near-perfectly calibrated (ECE 0.008 vs 0.172); tunable admission gate (95%→auto-insert all, 99%→route 31% to review at 98% precision) → Table I.
 - MIMIC-III / MIMIC-IV oncology cohorts curated (400 + 400 notes).
 
+**In progress**
+- MIMIC scale-up = **full 4-model ensemble union via vLLM** (running, ≈15–18 h on 2× A6000; seed gate passed at 92% source-grounding) → Tables IV, VI, VII.
+
 **Next**
-- MIMIC scale-up via **distillation**: seed ensemble (≈200 notes) → quality gate → distil one model → deploy on the rest → Tables IV, VI, VII.
 - Vanilla-RAG baseline row (Table II) + validation-dimension (Table III) and retrieval (Table V) aggregations.
-- Extend calibration + selective admission to MIMIC; validate the distilled model on the CORAL test split.
+- Extend calibration + selective admission to MIMIC. (Distillation → future work.)
 
 ---
 
