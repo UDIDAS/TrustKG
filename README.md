@@ -25,14 +25,14 @@ heterogeneous data at scale — not merely a clinical extractor. Mapped to the b
    heterogeneous text can't be human-verified at scale, so TRUST-KG casts KG *ingestion* as **calibrated
    selective prediction**: each candidate fact is scored for reliability and **inserted / routed-to-review /
    rejected before materialization**, at a **tunable quality–coverage operating point**. **Demonstrated on
-   CORAL** (held-out test): a learned reliability model **auto-inserts ~60% of candidate facts at 94.8%
+   CORAL** (held-out test): a learned reliability model **auto-inserts ≈60% of candidate facts at 94.8%
    precision** (37% to review, 4% rejected), halving selective AURC (0.09→0.05) and cutting ECE 0.14→0.04.
    → Table I.
 2. **Variety — heterogeneous, multi-source integration.** One pipeline unifies expert oncology reports
    (CORAL), ICU notes (MIMIC-III), and longitudinal EHR (MIMIC-IV) — multi-institution, **pan-cancer** — into
    a single ontology-aligned, FHIR-typed, SPARQL-queryable RDF graph. → Tables IV, VI.
 3. **Volume — scale at ingestion + bounded-cost scalability.** The oncology cohort is filtered from
-   **~6.3 M diagnosis rows / 2 M+ notes / 546 K admissions** in BigQuery; Table VII characterizes
+   **≈6.3 M diagnosis rows / 2 M+ notes / 546 K admissions** in BigQuery; Table VII characterizes
    **throughput, verification latency, and cost as corpus fraction grows**, via a resident-model,
    batched-inference extractor — a *scalable method*, not a huge graph. → Table VII.
 4. **Value — unstructured → queryable analytics.** Narratives become **SPARQL-executable** cohort / temporal /
@@ -115,15 +115,15 @@ pass-1 triples as graph-neighborhood evidence) and **ensemble union** across mod
 
 | Dataset | Domain | Patients | Cases (notes) | Median len | Gold | Role |
 |---|---|---:|---:|---:|---|---|
-| CORAL-PDAC | Pancreatic oncology | 20 | 20 | ~11 K | expert entity spans | entity P/R/F1 |
-| CORAL-BRCA | Breast oncology | 20 | 20 | ~11 K | expert entity spans | entity P/R/F1 |
-| MIMIC-III (onc.) | ICU/EHR oncology | 392 | 400 | ~10.4 K | — | scale / source-grounding |
-| MIMIC-IV (onc.) | EHR oncology | 394 | 400 | ~10.1 K | — | scale / source-grounding |
+| CORAL-PDAC | Pancreatic oncology | 20 | 20 | ≈11 K | expert entity spans | entity P/R/F1 |
+| CORAL-BRCA | Breast oncology | 20 | 20 | ≈11 K | expert entity spans | entity P/R/F1 |
+| MIMIC-III (onc.) | ICU/EHR oncology | 392 | 400 | ≈10.4 K | — | scale / source-grounding |
+| MIMIC-IV (onc.) | EHR oncology | 394 | 400 | ≈10.1 K | — | scale / source-grounding |
 
 **CORAL** (40 patients = 20 pancreatic + 20 breast) is the annotated benchmark — dense oncology narratives
 with expert `PROBLEM`/`TEST`/`TREATMENT` spans for entity-level evaluation.
 
-**MIMIC-III / MIMIC-IV (oncology subsets)** — 400 notes each (~392–394 distinct patients / 400 admissions),
+**MIMIC-III / MIMIC-IV (oncology subsets)** — 400 notes each (≈392–394 distinct patients / 400 admissions),
 filtered to **malignant-neoplasm ICD codes** (ICD-10 `C00–C97` / ICD-9 `140–208`). A **pan-cancer**
 population (by note mentions: lung > colorectal > GI/esophageal > GU > head-&-neck > breast > prostate >
 pancreatic), broadening CORAL's breast+pancreatic focus. No expert entity gold, so (per the paper's design)
@@ -144,9 +144,9 @@ Qwen3-4B, MedGemma-4B), entity-level vs gold (exact scorer):
 | CORAL-PDAC | 20 | 0.958 | 0.815 | **0.879 ± 0.048** | [0.858, 0.900] |
 | CORAL-BRCA | 20 | 0.940 | 0.848 | **0.890 ± 0.044** | [0.871, 0.909] |
 
-Both cohorts' F1 **match/beat the prior Gemma-3 + Qwen-8B ensemble** (0.877 / 0.868) at **precision ~0.95** and
+Both cohorts' F1 **match/beat the prior Gemma-3 + Qwen-8B ensemble** (0.877 / 0.868) at **precision ≈0.95** and
 half the parameter budget — the all-≤5B constraint cost nothing. The 2-pass anchor lifts ensemble recall from
-~0.73 (1-pass) to **0.83**. → Table **II**.
+≈0.73 (1-pass) to **0.83**. → Table **II**.
 
 **Stage 2 — Validation** · trust-filter (δ=0.4): a **no-op** here (nothing pruned → precision held).
 
@@ -215,8 +215,8 @@ Table I — selective admission part (operating point set on dev for ≥95% prec
 | **Learned** | **0.045** | **0.595** | **60.1%** | 35.9% | 4.0% | **0.948** |
 | Learned + calibration | 0.045 | 0.595 | 60.1% | 35.9% | 4.0% | 0.948 |
 
-The learned selective policy **auto-inserts ~60% of candidate facts at 94.8% precision**, routes ~36% to
-review, rejects ~4% — the tunable quality–coverage admission control (the Veracity contribution). The learned
+The learned selective policy **auto-inserts ≈60% of candidate facts at 94.8% precision**, routes ≈36% to
+review, rejects ≈4% — the tunable quality–coverage admission control (the Veracity contribution). The learned
 scores are already well-calibrated, so post-hoc calibration doesn't improve them (ECE 0.036→0.041 — an honest
 no-op). Numbers are frozen (seeded learner) so the table is reproducible.
 
@@ -225,7 +225,7 @@ no-op). Numbers are frozen (seeded learner) so the table is reproducible.
 is the best anchor by a wide margin (solo F1 0.71 vs Gemma-3-4B 0.58), so Gemma-3 is dropped as redundant.
 The winning union is **Gemma-4-E4B ∪ Llama-3.2-3B ∪ Qwen3-4B ∪ MedGemma-4B**; per the framework the anchor gets
 the second pass and the augmenters stay single-pass. Phi-4-mini was excluded (incompatible with transformers 5.8).
-Recall levers stack: 1-pass ensemble (~0.73) → **2-pass anchor** (0.83). Residual misses are anaphora and
+Recall levers stack: 1-pass ensemble (≈0.73) → **2-pass anchor** (0.83). Residual misses are anaphora and
 lab-table fragments the gold annotates but aren't clean EAV entities.
 
 ---
@@ -235,17 +235,17 @@ lab-table fragments the gold annotates but aren't clean EAV entities.
 Focused on **oncology patients** (to complement CORAL, not the general ICU population). `fetch_mimic_oncology.py`
 identifies oncology admissions by malignant-neoplasm ICD codes and pulls their free-text notes from BigQuery
 (`physionet-data`: MIMIC-III `mimiciii_notes.noteevents`, MIMIC-IV `mimiciv_note.discharge`). **400 notes were
-obtained per source** (~392 / 394 patients). Access is credential-gated via PhysioNet; queries cost **~$0**
+obtained per source** (≈392 / 394 patients). Access is credential-gated via PhysioNet; queries cost **≈$0**
 (a few GB vs the 1 TB/month free tier), with a free dry-run estimate and a hard byte-billed cap. Extraction
 uses a resident-model, batched-inference runner for throughput, feeding the MIMIC scale/grounding tables.
 
 **Scale-up = distillation (the Volume contribution).** The verified extractor is a 4-model ensemble with a
-2-pass anchor — high quality but slow (running it across all 800 MIMIC notes is ~2 days). So we scale by
+2-pass anchor — high quality but slow (running it across all 800 MIMIC notes is ≈2 days). So we scale by
 **bootstrap distillation**:
-1. **Seed** — run the full ensemble on a ~200-note MIMIC seed (the high-quality *teacher*).
+1. **Seed** — run the full ensemble on a ≈200-note MIMIC seed (the high-quality *teacher*).
 2. **Gate** — verify seed coverage + source-grounding *before* scaling.
 3. **Distill** — LoRA-fine-tune **one** model on the seed's trust-filtered triples.
-4. **Deploy** — run that fast single model on the remaining notes (~1/5 the compute of the ensemble).
+4. **Deploy** — run that fast single model on the remaining notes (≈1/5 the compute of the ensemble).
 
 The distilled model is validated back on the CORAL **test** split (the only gold) to confirm quality is
 preserved. This turns an expensive multi-model *verified* extractor into a *scalable* one — the Volume / RQ4
@@ -259,11 +259,11 @@ story, not a detour. → Tables IV, VI, VII.
 - Extractor selected by full extractor-comparison sweep: **Gemma-4-E4B 2-pass anchor + Llama-3.2-3B / Qwen3-4B / MedGemma-4B** (all ≤5B); F1 0.879 / 0.890.
 - Full 40-patient CORAL run, per cohort → Table II.
 - CORAL end-to-end: RDF materialization + SPARQL cohort queries, per cohort → Table VI.
-- Veracity: calibration + selective admission on CORAL — learned reliability auto-inserts ~60% at 94.8% precision → Table I.
+- Veracity: calibration + selective admission on CORAL — learned reliability auto-inserts ≈60% at 94.8% precision → Table I.
 - MIMIC-III / MIMIC-IV oncology cohorts curated (400 + 400 notes).
 
 **Next**
-- MIMIC scale-up via **distillation**: seed ensemble (~200 notes) → quality gate → distil one model → deploy on the rest → Tables IV, VI, VII.
+- MIMIC scale-up via **distillation**: seed ensemble (≈200 notes) → quality gate → distil one model → deploy on the rest → Tables IV, VI, VII.
 - Vanilla-RAG baseline row (Table II) + validation-dimension (Table III) and retrieval (Table V) aggregations.
 - Extend calibration + selective admission to MIMIC; validate the distilled model on the CORAL test split.
 
