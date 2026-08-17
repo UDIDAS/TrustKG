@@ -11,7 +11,10 @@ PY=/home/ud3d4/.conda/envs/llmft/bin/python
 ts () { date +%H:%M:%S; }
 
 start_server () {  # $1 = hf_id ; kills only THIS port's server (not the other cohort's)
-  pkill -9 -f "vllm serve .*--port $PORT" 2>/dev/null || true; sleep 4
+  # free GPU $GPU FULLY: EngineCore worker subprocs don't match "vllm serve", so
+  # kill everything nvidia-smi reports on this GPU or the next server OOMs on their leftover VRAM
+  for pid in $(nvidia-smi -i "$GPU" --query-compute-apps=pid --format=csv,noheader 2>/dev/null); do kill -9 "$pid" 2>/dev/null; done
+  pkill -9 -f "vllm serve .*--port $PORT" 2>/dev/null || true; sleep 6
   ( source scripts/vllm_env.sh; export CUDA_VISIBLE_DEVICES=$GPU
     exec vllm serve "$1" --port "$PORT" --served-model-name "$1" \
          --gpu-memory-utilization 0.85 --max-model-len 16384 ) > "$SLOG" 2>&1 &
