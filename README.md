@@ -311,6 +311,28 @@ Two headline claims fall straight out of this:
 *(Numbers from the in-progress vLLM run; Gemma-4 is complete on both cohorts, the augmenters finalize with
 the full 800 notes. Every model is 0-empty after the Qwen3 thinking-mode fix.)*
 
+### Extraction failure modes & how they're handled
+
+The zero-shot ensemble makes characteristic errors — and the two-stage design means we **don't fine-tune
+them away**: deterministic normalization handles the structural noise, and the calibrated trust gate handles
+the semantic residual. Surveyed over the MIMIC triples (`scripts/mimic_failure_survey.py`; categories
+overlap, so shares sum to >100%):
+
+| Failure mode | Share | Family | Example | Handled by |
+|---|---|---|---|---|
+| Invalid FHIR type | **41%** | Structural | `fhir_type=Age` on `'year'` | Normalization — type canonicalization |
+| Degenerate (entity == value) | **23%** | Structural | `cholecystitis --has_history--> cholecystitis` | Normalization — collapse to one typed node |
+| Vacuous / generic entity | **12%** | Structural | `year --age--> 84` | Normalization — route to Patient attribute |
+| Ungrounded span | **12%** | Artifact / semantic | evidence span not verbatim in note | Trust gate (grounding, β₁) |
+| Semantic relation error | — | **Semantic** | `antibiotic --medication_type--> doxorubicin` | Trust gate → Review (real grounding to Reject) |
+| PHI placeholder leak | **1%** | Compliance | `Mr. [Known lastname 33561]` | Normalization — **drop** |
+
+≈76% is **structural** (the fact is usually right, the encoding is noisy → deterministic normalization); PHI
+is a **compliance drop**; the **semantic residual** is exactly what the calibrated gate is for. Worked
+example: the gate scores the wrong `antibiotic → doxorubicin` triple **0.74** vs **0.88** for the correct
+`doxorubicin → chemotherapy`, so at a strict operating point it is **routed to Review, not auto-Inserted** —
+confidently *rejecting* it (vs demoting) is the case that motivates real terminology grounding.
+
 ---
 
 ## Status
