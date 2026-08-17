@@ -22,7 +22,8 @@ os.environ.setdefault("TRUSTKG_ROOT", "/home/ud3d4/Desktop/TrustKG")
 
 VAL_KEYS = ["source_grounding", "ontology_check", "schema_check", "temporal_consistency", "contradiction_score"]
 FHIR_CATS = ["Condition", "Observation", "Procedure", "MedicationStatement"]
-CACHE = Path("results/e1e2_labeled.json")
+UNION_DIR = os.environ.get("TRUSTKG_UNION_DIR", "results/extraction/ens3/union")
+CACHE = Path(os.environ.get("TRUSTKG_E1E2_CACHE", "results/e1e2_labeled.json"))
 
 
 def build_labeled():
@@ -30,9 +31,11 @@ def build_labeled():
     from src.extraction.validation import validate_patient_triples
     from src.extraction.evaluate import _get_triple_texts, _match_score
     from src.graph.rdf_builder import _normalize_fhir_type
+    import functools, src.extraction.evaluate as _ev
+    _ev._normalize = functools.lru_cache(maxsize=None)(_ev._normalize)   # memoize labeling match
     docs = {d.patient_id: d for d in load_coral_documents()}
     out = []
-    for f in sorted(glob.glob("results/extraction/ens3/union/*.json")):
+    for f in sorted(glob.glob(f"{UNION_DIR}/*.json")):
         d = json.load(open(f)); pid = d["patient"]; doc = docs[pid]
         gt = load_ground_truth(Path(doc.metadata["file"].replace(".txt", ".ann.txt")))
         gold = list({e["text"] for e in gt})
@@ -109,18 +112,29 @@ for name, p in [("Heuristic Trust", trust[te]), ("Learned (uncalibrated)", learn
 
 print("\nTABLE IX — Selective admission (held-out TEST). Insert/Review/Reject at 95%-precision op point")
 print(f"  {'policy':24s} {'AURC':>6s} {'Cov@95':>7s} | {'Insert':>7s} {'Review':>7s} {'Reject':>7s} {'InsPrec':>7s}")
-# dev = val (calibrated where applicable) to pick operating point
+dev_c_cal = platt.predict_proba(gb.predict_proba(X[va])[:, 1].reshape(-1, 1))[:, 1]
 for name, dev_c, dev_y, te_c in [
-        ("Heuristic Trust", trust_cal_te if False else platt_h.predict_proba(trust[va].reshape(-1,1))[:,1], y[va], trust_cal_te),
-        ("Learned Reliability", gb.predict_proba(X[va])[:,1], y[va], learn_te),
-        ("Calibrated Selective", platt.predict_proba(gb.predict_proba(X[va])[:,1].reshape(-1,1))[:,1], y[va], learn_cal_te)]:
+        ("Heuristic Trust", platt_h.predict_proba(trust[va].reshape(-1, 1))[:, 1], y[va], trust_cal_te),
+        ("Learned Reliability", gb.predict_proba(X[va])[:, 1], y[va], learn_te),
+        ("Calibrated Selective", dev_c_cal, y[va], learn_cal_te)]:
     i, r, j, ip = bands(dev_c, dev_y, te_c, yte)
     print(f"  {name:24s} {aurc(te_c,yte):>6.3f} {cov95(te_c,yte):>7.3f} | {i*100:>6.1f}% {r*100:>6.1f}% {j*100:>6.1f}% {ip:>7.3f}")
+
+# Operating-point curve: as the target precision rises, the gate routes/rejects more (the tunable tradeoff)
+print("\n  Operating-point curve (Calibrated Selective) — Insert/Review/Reject as target precision rises:")
+print(f"    {'target':>7s} | {'Insert':>7s} {'Review':>7s} {'Reject':>7s} {'InsPrec':>8s}")
+curve = {}
+for tgt in [0.95, 0.98, 0.99]:
+    i, r, j, ip = bands(dev_c_cal, y[va], learn_cal_te, yte, hi=tgt)
+    curve[f"{tgt:.2f}"] = {"insert": round(float(i), 4), "review": round(float(r), 4),
+                           "reject": round(float(j), 4), "ins_prec": round(float(ip), 4)}
+    print(f"    {tgt:>7.2f} | {i*100:>6.1f}% {r*100:>6.1f}% {j*100:>6.1f}% {ip:>8.3f}")
 
 json.dump({"n": len(data), "correct_rate": float(y.mean()), "test_n": int(te.sum()),
            "viii": {"heuristic_ece": ece(trust[te], yte), "learned_ece": ece(learn_te, yte),
                     "learned_platt_ece": ece(learn_cal_te, yte)},
            "ix": {"aurc_heuristic": aurc(trust_cal_te, yte), "aurc_learned": aurc(learn_te, yte),
-                  "cov95_learned": cov95(learn_te, yte)}},
+                  "cov95_learned": cov95(learn_te, yte)},
+           "curve": curve},
           open("results/e1e3_results.json", "w"), indent=2)
 print("\nSaved results/e1e3_results.json")

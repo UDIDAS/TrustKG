@@ -25,9 +25,9 @@ heterogeneous data at scale — not merely a clinical extractor. Mapped to the b
    heterogeneous text can't be human-verified at scale, so TRUST-KG casts KG *ingestion* as **calibrated
    selective prediction**: each candidate fact is scored for reliability and **inserted / routed-to-review /
    rejected before materialization**, at a **tunable quality–coverage operating point**. **Demonstrated on
-   CORAL** (held-out test): a learned reliability model **auto-inserts ≈60% of candidate facts at 94.8%
-   precision** (37% to review, 4% rejected), halving selective AURC (0.09→0.05) and cutting ECE 0.14→0.04.
-   → Table I.
+   CORAL** (held-out test): a learned reliability model is **near-perfectly calibrated (ECE 0.008 vs 0.172
+   heuristic)** and drives a **tunable** gate — auto-inserting ≈everything at a 95% precision bar, or selectively
+   routing 31% to review and rejecting the riskiest to reach **98% precision at a 99% bar**. → Table I.
 2. **Variety — heterogeneous, multi-source integration.** One pipeline unifies expert oncology reports
    (CORAL), ICU notes (MIMIC-III), and longitudinal EHR (MIMIC-IV) — multi-institution, **pan-cancer** — into
    a single ontology-aligned, FHIR-typed, SPARQL-queryable RDF graph. → Tables IV, VI.
@@ -199,26 +199,44 @@ Every extracted triple gets a reliability score; a **learned reliability** model
 structural features, trained on the train split) beats the heuristic trust and enables **selective admission**
 at a target precision.
 
-Table I — calibration part (lower better):
+Table I — calibration part (held-out test, lower better):
 
 | Reliability | ECE | Brier | NLL |
 |---|---|---|---|
-| Heuristic trust | 0.141 | 0.119 | 0.406 |
-| **Learned** | **0.036** | **0.091** | **0.311** |
-| Learned + calibration | 0.041 | 0.094 | 0.320 |
+| Heuristic trust | 0.172 | 0.082 | 0.315 |
+| **Learned** | **0.008** | **0.046** | **0.181** |
+| Learned + calibration | 0.014 | 0.048 | 0.190 |
 
-Table I — selective admission part (operating point set on dev for ≥95% precision):
+The learned reliability model is **far better calibrated** — ECE **0.008** vs the heuristic's 0.172 (its "0.9"
+really means ≈90% correct). AURC 0.019 (learned) vs 0.031 (heuristic); Coverage@95% 0.992.
 
-| Policy | AURC ↓ | Cov@95% ↑ | Insert | Review | Reject | Insert-prec |
-|---|---|---|---|---|---|---|
-| Heuristic trust | 0.094 | 0.003 | 21.5% | 78.4% | 0.1% | 0.932 |
-| **Learned** | **0.045** | **0.595** | **60.1%** | 35.9% | 4.0% | **0.948** |
-| Learned + calibration | 0.045 | 0.595 | 60.1% | 35.9% | 4.0% | 0.948 |
+**What these three metrics mean** (all judge how *trustworthy the reliability score itself* is; lower is better):
+- **ECE — Expected Calibration Error:** *are the confidences honest?* Bucket facts by their score and check — of
+  the facts scored "90% reliable," are ≈90% actually correct? ECE is the average of that gap across buckets.
+  **0.008 = off by <1%** (the hand-tuned heuristic is off by ~17%). This is the headline: the learned score is a
+  probability you can trust, so the admission threshold means what it says.
+- **Brier score:** mean-squared error between the predicted probability and the 0/1 outcome. Rewards being
+  confident *and* right; punishes confident-but-wrong. Lower = the scores are both **sharp and honest**.
+- **NLL — Negative Log-Likelihood:** how "surprised" the score is by the truth, with a **logarithmic** penalty
+  that punishes confident mistakes very hard. Lower = better-behaved probabilities, especially at the extremes.
 
-The learned selective policy **auto-inserts ≈60% of candidate facts at 94.8% precision**, routes ≈36% to
-review, rejects ≈4% — the tunable quality–coverage admission control (the Veracity contribution). The learned
-scores are already well-calibrated, so post-hoc calibration doesn't improve them (ECE 0.036→0.041 — an honest
-no-op). Numbers are frozen (seeded learner) so the table is reproducible.
+In short: **ECE checks honesty (calibration); Brier and NLL are *proper scoring rules* that combine honesty with
+how decisively the score separates right from wrong.** All three agree here that the learned reliability is the
+better-behaved probability — which is what makes the admission threshold trustworthy.
+
+Table I — selective admission (tunable operating point). Because the Gemma-4 ensemble is already ≈95% precise,
+a 95% target admits nearly everything; **raising the bar makes the calibrated gate selectively route/reject the
+riskiest facts** — the tunable quality–coverage tradeoff:
+
+| Target precision | Insert | Review | Reject | Achieved precision |
+|---|---|---|---|---|
+| 95% | 100% | 0% | 2% | 0.949 |
+| 98% | 86% | 12% | 2% | 0.967 |
+| **99%** | **67%** | **31%** | **2%** | **0.981** |
+
+So the policy **adapts to the required bar**: auto-insert ≈everything when 95% suffices, or route 31% to review
+and reject the riskiest to reach **98.1% precision** at a 99% target — the calibrated selective admission control
+(the Veracity contribution). Numbers are frozen (seeded learner), reproducible.
 
 **How the config was chosen** (extractor-comparison sweep over all 2ⁿ−1 model unions on full CORAL, gold-scored;
 `scripts/combo_eval.py`): every candidate is **≤5B** (Qwen3-8B dropped — the throughput bottleneck). **Gemma-4-E4B**
@@ -259,7 +277,7 @@ story, not a detour. → Tables IV, VI, VII.
 - Extractor selected by full extractor-comparison sweep: **Gemma-4-E4B 2-pass anchor + Llama-3.2-3B / Qwen3-4B / MedGemma-4B** (all ≤5B); F1 0.879 / 0.890.
 - Full 40-patient CORAL run, per cohort → Table II.
 - CORAL end-to-end: RDF materialization + SPARQL cohort queries, per cohort → Table VI.
-- Veracity: calibration + selective admission on CORAL — learned reliability auto-inserts ≈60% at 94.8% precision → Table I.
+- Veracity: on the Gemma-4 ensemble — learned reliability near-perfectly calibrated (ECE 0.008 vs 0.172); tunable admission gate (95%→auto-insert all, 99%→route 31% to review at 98% precision) → Table I.
 - MIMIC-III / MIMIC-IV oncology cohorts curated (400 + 400 notes).
 
 **Next**
