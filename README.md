@@ -239,6 +239,18 @@ obtained per source** (~392 / 394 patients). Access is credential-gated via Phys
 (a few GB vs the 1 TB/month free tier), with a free dry-run estimate and a hard byte-billed cap. Extraction
 uses a resident-model, batched-inference runner for throughput, feeding the MIMIC scale/grounding tables.
 
+**Scale-up = distillation (the Volume contribution).** The verified extractor is a 4-model ensemble with a
+2-pass anchor — high quality but slow (running it across all 800 MIMIC notes is ~2 days). So we scale by
+**bootstrap distillation**:
+1. **Seed** — run the full ensemble on a ~200-note MIMIC seed (the high-quality *teacher*).
+2. **Gate** — verify seed coverage + source-grounding *before* scaling.
+3. **Distill** — LoRA-fine-tune **one** model on the seed's trust-filtered triples.
+4. **Deploy** — run that fast single model on the remaining notes (~1/5 the compute of the ensemble).
+
+The distilled model is validated back on the CORAL **test** split (the only gold) to confirm quality is
+preserved. This turns an expensive multi-model *verified* extractor into a *scalable* one — the Volume / RQ4
+story, not a detour. → Tables IV, VI, VII.
+
 ---
 
 ## Status
@@ -251,9 +263,9 @@ uses a resident-model, batched-inference runner for throughput, feeding the MIMI
 - MIMIC-III / MIMIC-IV oncology cohorts curated (400 + 400 notes).
 
 **Next**
-- MIMIC scale extraction (throughput-optimized) → Tables IV, VI, VII.
-- Heterogeneous-evidence (retrieval) eval → Table V; extend calibration/selective to MIMIC.
-- Per-patient miss analysis (recall by entity type) → extractor fine-tuning for the next version.
+- MIMIC scale-up via **distillation**: seed ensemble (~200 notes) → quality gate → distil one model → deploy on the rest → Tables IV, VI, VII.
+- Vanilla-RAG baseline row (Table II) + validation-dimension (Table III) and retrieval (Table V) aggregations.
+- Extend calibration + selective admission to MIMIC; validate the distilled model on the CORAL test split.
 
 ---
 
