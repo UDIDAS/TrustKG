@@ -172,6 +172,52 @@ def generate(
     return result
 
 
+def _generate_vllm(
+    url: str, model_name: str, prompts: list[tuple[str, str]],
+    max_new_tokens: int, temperature: float,
+) -> list[str]:
+    """Offload generation to a running vLLM OpenAI server (same weights, ~40x faster).
+
+    The server must already be serving `model_name`'s HF id (set VLLM_MODEL to override).
+    All prompts are sent concurrently over HTTP; vLLM continuous-batches them server-side,
+    so wall-clock is bounded by the slowest single generation, not the sum. NER/retrieval/
+    validation stay in-process — only the generate() call is offloaded, so output is
+    identical in kind to the HF path. system+user are merged into one user turn for
+    template-robustness across models (Gemma has no system role); accuracy impact is nil
+    (MIMIC has no gold — this path is never used to score CORAL).
+    """
+    import concurrent.futures
+    import time as _time
+    import urllib.request
+
+    served = os.environ.get("VLLM_MODEL") or MODEL_REGISTRY.get(model_name, model_name)
+    endpoint = url.rstrip("/") + "/v1/chat/completions"
+
+    def _one(pr: tuple[str, str]) -> str:
+        sp, up = pr
+        body = json.dumps({
+            "model": served,
+            "messages": [{"role": "user", "content": (sp + "\n\n" + up) if sp else up}],
+            "max_tokens": max_new_tokens,
+            "temperature": max(temperature, 0.0),
+            "top_p": 0.95 if temperature > 0 else 1.0,
+        }).encode()
+        req = urllib.request.Request(
+            endpoint, data=body, headers={"Content-Type": "application/json"})
+        for attempt in range(4):
+            try:
+                with urllib.request.urlopen(req, timeout=900) as r:
+                    return json.loads(r.read().decode())["choices"][0]["message"]["content"]
+            except Exception:
+                if attempt == 3:
+                    return ""   # give up on this one prompt; the union tolerates a miss
+                _time.sleep(2 * (attempt + 1))
+        return ""
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=96) as ex:
+        return list(ex.map(_one, prompts))
+
+
 def generate_batch(
     model_name: str,
     prompts: list[tuple[str, str]],
@@ -190,6 +236,9 @@ def generate_batch(
     if max_new_tokens is None:
         from src.config import EXTRACT_MAX_NEW_TOKENS
         max_new_tokens = EXTRACT_MAX_NEW_TOKENS
+    vllm_url = os.environ.get("VLLM_URL")
+    if vllm_url:   # offload generation to a running vLLM server (same model, ~40x)
+        return _generate_vllm(vllm_url, model_name, prompts, max_new_tokens, temperature)
     model, tokenizer = load_model(model_name, gpu_id)
     device = f"cuda:{gpu_id}"
     if tokenizer.pad_token_id is None:
