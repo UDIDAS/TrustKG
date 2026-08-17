@@ -109,6 +109,16 @@ Two recall levers used in the reported config: **two-pass extraction** (pass 2 r
 pass-1 triples as graph-neighborhood evidence) and **ensemble union** across models — which raises recall
 *and* precision (independent models reinforce true positives).
 
+**No fine-tuning — the extractor is zero-shot.** Every model (Gemma-4-E4B, Llama-3.2-3B, Qwen3-4B,
+MedGemma-4B) is used **off-the-shelf, with no weight updates**. All extraction behaviour comes from the
+*structured FHIR-typed prompt + hybrid RAG grounding (BM25 + MedCPT + graph-neighborhood) + the two-pass
+anchor* (inference-time self-refinement) — **no LoRA/QLoRA, no supervised fine-tuning, no labelled training
+data**. The **only** trained component in the whole system is the veracity layer's reliability classifier —
+a small scikit-learn GradientBoosting model fit on CORAL-gold trust features — which scores *admission*,
+not extraction, and is not an LLM. This is deliberate: the pipeline transfers to a new corpus (MIMIC) with
+**zero adaptation**, and quality is bought by *calibrated selective admission + normalization* rather than
+by training the extractor. (Fine-tuning would enter only via the *distillation* future-work path, off this paper.)
+
 ---
 
 ## Datasets (all oncology)
