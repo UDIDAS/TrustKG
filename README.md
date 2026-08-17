@@ -274,6 +274,33 @@ corpus fractions (throughput, retrieval/verification latency, KG growth, cost) �
 **test** split) stays a compelling **future-work** direction for cheaper deployment — but it is off the
 current paper, which reports the ensemble itself.
 
+### Per-model division of labour (MIMIC) — evidence for *ensemble → recall, trust → precision*
+
+The ensemble is not redundancy: each model plays a distinct role, and the quality **spread** is exactly
+what the two-stage design exploits. Measured on the MIMIC oncology run (grounding = % of a model's triples
+whose `evidence_span` appears **verbatim** in the source note — a conservative anti-hallucination check):
+
+| Model (role) | triples / note | evidence-grounded | unique entities |
+|---|---|---|---|
+| **Gemma-4-E4B** — 2-pass anchor | ≈155–170 | **94–98%** | ≈10k / cohort |
+| MedGemma-4B — augmenter | ≈103 | 83–87% | ≈7k |
+| Qwen3-4B — augmenter | ≈85 | ≈88% | ≈1k+ |
+| Llama-3.2-3B — augmenter | ≈50 | **56–58%** | ≈3k |
+
+Two headline claims fall straight out of this:
+
+- **Ensemble → recall.** Each augmenter contributes complementary triples (distinct entity sets) the anchor
+  alone misses, so the union is larger and higher-recall than any single model — which is how the ≤5B
+  ensemble matches the older Gemma-3 + Qwen-8B config at CORAL F1 0.879 / 0.890.
+- **Trust → precision.** The models span a wide faithfulness range — the anchor grounds ≈95%+, while
+  Llama-3.2-3B (smallest, 3B) grounds only ≈57%. The framework does **not** blindly union: the veracity
+  layer scores grounding and routes the ungrounded triples to Review/Reject instead of auto-Insert. This is
+  the concrete motivation for the trust gate. *(Per-model Insert-tier survival rate — direct proof the gate
+  filters the weak augmenter — is added when the union completes.)*
+
+*(Numbers from the in-progress vLLM run; Gemma-4 is complete on both cohorts, the augmenters finalize with
+the full 800 notes. Every model is 0-empty after the Qwen3 thinking-mode fix.)*
+
 ---
 
 ## Status
