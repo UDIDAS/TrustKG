@@ -77,6 +77,18 @@ def main():
         print(f"{LABEL[L]:26s} {p[L]:>8.3f} {b[L]:>8.3f} {o[L]:>8.3f}")
     print(f"\nn_triples: PDAC {n_triples['pdac']}  BRCA {n_triples['brca']}  "
           f"total {sum(n_triples.values())}")
+    # Pass-rate view — to contrast with the mean scores (these ARE NOT pass rates)
+    print("\nMean score vs pass-rate (overall) — the mean is not any single pass rate:")
+    print(f"{'Layer':26s} {'mean':>7s} {'%>=0.5':>8s} {'%=1.0':>8s}")
+    pr = {}
+    for L in LAYERS:
+        v = overall[L]
+        ge = sum(1 for x in v if x >= 0.5) / len(v)
+        eq = sum(1 for x in v if x >= 0.999) / len(v)
+        pr[L] = {"mean": round(st.mean(v), 4), "pass_ge_0.5": round(ge, 4), "pass_eq_1.0": round(eq, 4)}
+        print(f"{LABEL[L]:26s} {st.mean(v):>7.3f} {ge*100:>7.1f}% {eq*100:>7.1f}%")
+    report["overall_passrates"] = pr
+    json.dump(report, open("results/table4_coral_validation.json", "w"), indent=2)
     print("Saved results/table4_coral_validation.json")
 
 

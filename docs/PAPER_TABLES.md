@@ -81,6 +81,19 @@ selective admission buys as the precision target tightens (one method, the tunab
 - **⚠️ The 67/31/2 is this method at the 99% target — do NOT place it beside the Heuristic's 100/0/0 as if they
   share one threshold.** Every method sits at 100/0/0 at the 95% bar (Panel A's setting).
 
+**What Panel B lets us conclude (RQ3):**
+1. **The gate is controllable** — tightening the target 95→99% raises realized insert-precision 0.949→0.967→0.981
+   while auto-insert coverage falls 100→86→67%. The knob does what it promises: you *buy* precision with coverage.
+2. **The requested precision is approximately delivered** (0.981 at a 99% target) — evidence that the calibrated
+   per-fact score turns into an (approximate) set-level precision guarantee without checking facts by hand.
+   *(Honest: 0.981 ≈ but not exactly 0.99 — a small dev→test gap; a controllable trade, not a hard guarantee.)*
+3. **It quantifies the cost of high precision:** reaching ≈98% insert-precision costs ≈31% of facts routed to
+   human review and ≈2% rejected — a predictable review budget an operator can plan around.
+4. **The review burden stays bounded/practical** — even at the strictest bar most facts are auto-handled; the
+   human is a light backstop (≈⅓ to review, ≈2% rejected), not doing the bulk of the work.
+- This is *not* the method comparison (that's the threshold-free ECE/AURC in Panel A); it's the tunable-policy
+  illustration. We do **not** commit to a single target — an operator picks the point for their use case.
+
 - Verified on the Gemma-4 `coral_final` ensemble (`results/e1e3_results.json`, seeded `random_state=0`,
   reproducible via `scripts/exp_calibration_selective.py`; default `TRUSTKG_UNION_DIR=coral_final` — the *reported*
   extractor. The old default pointed at `ens3` and produced different numbers).
