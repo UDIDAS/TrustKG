@@ -119,6 +119,31 @@ not extraction, and is not an LLM. This is deliberate: the pipeline transfers to
 **zero adaptation**, and quality is bought by *calibrated selective admission + normalization* rather than
 by training the extractor. (Fine-tuning would enter only via the *distillation* future-work path, off this paper.)
 
+### Knowledge-graph construction (schema + instances)
+
+The KG is built as a shared **schema (TBox)** that the **instances (ABox)** conform to — not a bare
+instance dump. Steps from extracted triples to queryable KG:
+
+1. **Ensemble union** — pool the 4 models' triples per note; exact-dedup.
+2. **Trust admission** — 5-layer validation → calibrated trust `T(τ)`; retain `T ≥ δ` (or route
+   Insert / Review / Reject at the chosen operating point).
+3. **Normalization** (`src/graph/triple_normalizer.py`) — canonicalize `fhir_type` → a real FHIR resource;
+   drop PHI / vacuous / administrative triples; collapse degenerate (`entity==value`); scrub de-id
+   placeholders from evidence/temporal spans; dedup by canonical key.
+4. **Schema / TBox** (`src/graph/schema.py`) — a type-level ontology: FHIR-aligned `owl:Class` hierarchy
+   (`fhir:Condition` / `Observation` / `Procedure` / … ⊑ `trustkg:ClinicalEntity`) + provenance/trust
+   predicates (`hasEntity`, `hasValue`, `temporalAnchor`, `evidenceSpan`, `trustScore`, `consensusLevel`,
+   `ontologyCode`) + an `OntologyConcept` class for SNOMED/RxNorm/LOINC grounding.
+5. **Instances / ABox** (`src/graph/rdf_builder.py`) — each entity → a typed node (`rdf:type` its FHIR
+   class), `rdfs:label`, `attribute → predicate → value`; ontology grounding via `owl:sameAs`
+   SNOMED/RxNorm/LOINC; trust / evidence / temporal annotations.
+6. **Materialize** — the TBox is merged into each cohort `.ttl` (self-contained schema+instances) and
+   also written standalone as `schema.ttl`. Run via `scripts/run_coral_graph.py` / `run_mimic_graph.py`.
+7. **Query** — SPARQL cohort / temporal / multi-hop queries validate the graph.
+
+Result: a schema-conformant, FHIR-aligned, PHI-clean KG, loadable in any triple store / Protégé with the
+TBox present for reasoning.
+
 ---
 
 ## Datasets (all oncology)
