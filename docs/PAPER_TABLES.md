@@ -115,16 +115,19 @@ Columns: `Validation Dimension | Result`.
 
 | Validation Dimension | Result |
 |---|---|
-| Source grounding | ⛔ |
-| Ontology compatibility | ⛔ |
-| Schema validity | ⛔ |
-| Temporal consistency | ⛔ |
-| Contradiction control | ⛔ |
+| Source grounding | **0.967** |
+| Ontology compatibility | **0.564** |
+| Schema validity | **0.539** |
+| Temporal consistency | **0.787** |
+| Contradiction control | **0.893** |
 
-- The five validation layers already exist (`src/extraction/validation.py`, layers 1–5) and are applied to
-  every ensemble triple. This table is just a **per-dimension summary** (e.g. mean pass-rate / mean score
-  over the 21,106 CORAL candidate triples) that we have **not yet written out** as a standalone result.
-- **To fill:** a short aggregation over the same validation output E1–E2 already computes (no new model runs).
+- ✅ **DONE** — aggregated over the **full current CORAL run** (Gemma-4 sub-5B ensemble, 40 patients,
+  **17,597 ensemble triples**; PDAC 8,747 / BRCA 8,850). Per-cohort is consistent (e.g. source grounding
+  PDAC 0.964 / BRCA 0.971). Not the old 30-patient values — freshly recomputed.
+- Script: `scripts/table4_validation.py` → `results/table4_coral_validation.json` (gitignored — DUA).
+- Reading: source grounding is the strong signal (0.967); ontology/schema are moderate (0.56/0.54),
+  reflecting the still-thin terminology grounding + loose fhir-typing (the normalization/grounding upgrade
+  targets exactly these).
 
 ---
 
