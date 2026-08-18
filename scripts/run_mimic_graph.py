@@ -39,16 +39,37 @@ def count(q):
     return int(q[0].get("n", q[0].get("count", 0))) if q else 0
 
 
+MODELS = ["gemma4-e4b", "llama32-3b", "qwen3-4b", "medgemma-4b"]
+
+
+def _dedup(ts):
+    seen, out = set(), []
+    for t in ts:
+        if not isinstance(t, dict):
+            continue
+        k = (str(t.get("entity", "")).lower().strip(),
+             str(t.get("attribute", "")).lower().strip(),
+             str(t.get("value", "")).lower().strip())
+        if k not in seen:
+            seen.add(k); out.append(t)
+    return out
+
+
 write_schema(str(OUT / "schema.ttl"))   # standalone shared TBox
 report = {}
 for cohort in ["mimiciii", "mimiciv"]:
-    SRC = Path(f"results/extraction/mimic_{cohort}/union")
-    files = sorted(SRC.glob("*.json"))
+    # ensemble union per note, pooled+deduped from the complete bymodel caches
+    # (same raw ensemble union CORAL's KG is built from; independent of the slow validated union)
+    bym = Path(f"results/extraction/mimic_{cohort}/bymodel")
+    ids = sorted({p.stem for m in MODELS for p in (bym / m).glob("*.json")})
     pgs = {}
-    for f in files:
-        d = json.load(open(f))
-        pid = str(d.get("id") or d.get("patient") or f.stem)
-        pgs[pid] = build_patient_graph(pid, d.get("triples", []), trust_threshold=DELTA)
+    for nid in ids:
+        pooled = []
+        for m in MODELS:
+            f = bym / m / f"{nid}.json"
+            if f.exists():
+                pooled += json.load(open(f)).get("triples", [])
+        pgs[nid] = build_patient_graph(nid, _dedup(pooled), trust_threshold=DELTA)
     cg = build_cohort_graph(pgs)
     cg += build_schema_graph()   # schema + instances: merge the TBox so each .ttl is self-contained
     serialize_graph(cg, OUT / f"mimic_{cohort}.ttl")
