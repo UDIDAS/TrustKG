@@ -94,6 +94,22 @@ selective admission buys as the precision target tightens (one method, the tunab
 - This is *not* the method comparison (that's the threshold-free ECE/AURC in Panel A); it's the tunable-policy
   illustration. We do **not** commit to a single target — an operator picks the point for their use case.
 
+**Gate applied to the materialized KG (makes admission visible in the *product*, not just a table —
+`scripts/trust_admission_demo.py`, held-out CORAL):**
+
+| KG | Triples | Precision (vs gold) |
+|---|---|---|
+| Union (pass-through, current default) | 3,053 | 0.949 |
+| **Trust-admitted (learned @ 99% target)** | **2,050** | **0.981** (+0.032) |
+
+- Held back = 1,003 triples (947 review / 56 reject); **118 are genuinely wrong**. The held-back set is what
+  a threshold-free / rule-based method keeps — e.g. **bogus entity→code assignments** (`Female`, `Diagnosis`,
+  `Noted` → SNOMED `254837009` = breast cancer) and **null/malformed triples** (`R2109 --mutation--> None`).
+- **Honest magnitude:** the precision lift is real but **modest (+0.032)** — the base extractor is already
+  ≈95% precise, so there is little entity-level error to remove. The gate's value is a *cleaner KG at a chosen
+  bar* + a visible review/reject queue, not a large cleanup. (The materialized KG is currently the Union
+  pass-through; applying the gate is a build-flag away — the scores just need threading into the union.)
+
 - Verified on the Gemma-4 `coral_final` ensemble (`results/e1e3_results.json`, seeded `random_state=0`,
   reproducible via `scripts/exp_calibration_selective.py`; default `TRUSTKG_UNION_DIR=coral_final` — the *reported*
   extractor. The old default pointed at `ens3` and produced different numbers).
