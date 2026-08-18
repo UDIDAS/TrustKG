@@ -1,9 +1,13 @@
 # TRUST-KG — Results Ledger (table-filling worksheet)
 
+> ⚠️ **SUPERSEDED — do not use the numbering or numbers below.** This ledger tracks an older draft
+> (9-table scheme, arabic numerals). The **canonical, current-draft-aligned reference is
+> [docs/PAPER_TABLES.md](../docs/PAPER_TABLES.md)** (draft's 6 tables, I–VI, with verified values).
+> Kept only for history.
+
 Purpose: track every number that must come from a **real, verified run** before the paper is
-finalized. Values below are copied from the current draft (`docs/BigData_2026_TrustKG.pdf`) and are
-**UNVERIFIED** until a run reproduces them. Do **not** treat any value here as final until its
-`Verified` box is checked and the source artifact is linked.
+finalized. Values below are copied from an earlier draft and are **UNVERIFIED / stale** — see
+`docs/PAPER_TABLES.md` for the authoritative current numbers.
 
 Status legend: `[ ]` not run · `[~]` run, needs check · `[x]` verified against logged output
 

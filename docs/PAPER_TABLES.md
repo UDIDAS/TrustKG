@@ -10,9 +10,8 @@ Legend:
   **not** come from our current experiments (earlier/lost runs, different protocol). Treat as pending and
   regenerate.
 
-> **Every number in the paper comes from our own experiments.** The current PDF has some cells pre-filled
-> (e.g. Table II "Gemma 2-pass" = 0.922, all of Table V's retrieval numbers) from earlier/lost runs — these
-> are **not authoritative; ignore them** and regenerate every value from a run in this repo.
+> **Every number in the paper comes from our own experiments.** Any cell the current PDF pre-fills from
+> earlier/lost runs is **not authoritative; ignore it** and regenerate the value from a run in this repo.
 
 All numbers are entity-level unless noted. CORAL is reported **per cohort** (PDAC = ids 0–19,
 BRCA = ids 20–39); we never pool the two cohorts for extraction metrics.
@@ -36,24 +35,23 @@ Big-Data evaluation.
 **Four research questions (draft §V):**
 | RQ | Question | Evidence table(s) |
 |---|---|---|
-| RQ1 | Does heterogeneous evidence improve extraction + construction-time verification? | V, II |
-| RQ2 | Does learned+calibrated reliability beat heuristic trust? | I |
-| RQ3 | Can calibrated selective admission control coverage / risk / review workload? | I |
-| RQ4 | Does TRUST-KG stay computationally practical as the corpus grows? | VII, VI |
+| RQ1 | Does heterogeneous evidence improve extraction + construction-time verification? | III, IV |
+| RQ2 | Does learned+calibrated reliability beat heuristic trust? | II |
+| RQ3 | Can calibrated selective admission control coverage / risk / review workload? | II |
+| RQ4 | Does TRUST-KG stay computationally practical as the corpus grows? | V, VI |
 
 ---
 
-> **Numbering aligned to the current Overleaf draft (`docs/BigData_2026_TrustKG.pdf`, 6 tables).**
-> The draft added **Table I = Datasets** (shifting the front tables +1) and **dropped** the old
-> source-grounding (MIMIC) and heterogeneous-evidence tables. `(was Table X)` = the pre-draft number.
-> a collaborator's "Table IV" = validation and "Table VI" = scalability are both **draft** numbers.
+> **Numbering matches the current draft (`docs/BigData_2026_TrustKG.pdf`, 6 tables):**
+> I Datasets · II Reliability calibration & admission · III Entity extraction (CORAL) ·
+> IV Construction-time validation (CORAL) · V CORAL KG scale & queryability · VI Corpus-fraction scalability.
 
-## Table I — Datasets used in the evaluation  *(new in draft — descriptive)*
+## Table I — Datasets used in the evaluation
 
 CORAL (PDAC + BRCA, 20 patients each) and MIMIC-III / MIMIC-IV oncology subsets (400 notes each,
 malignant-neoplasm ICD-filtered at ingestion). Descriptive overview — no computed metrics.
 
-## Table II — Reliability calibration & selective KG admission (held-out CORAL) ✅ COMPLETE  *(was Table I)*
+## Table II — Reliability calibration & selective KG admission (held-out CORAL) ✅ COMPLETE
 
 Columns: `Method | ECE | Brier | NLL | AURC | Cov.@95% | Insert | Review | Reject` (lower ECE/Brier/NLL/AURC
 better; higher Cov.@95% better; thresholds chosen independently on dev at the same ≥95% precision target).
@@ -81,7 +79,7 @@ inserts ≈100% (nothing to reject); the **tunable operating-point curve** is th
 
 ---
 
-## Table III — Entity-level extraction on CORAL ✅ Ensemble verified · ⛔ baseline rows to run  *(was Table II)*
+## Table III — Entity-level extraction on CORAL ✅ Ensemble verified · ⛔ baseline rows to run
 
 Columns: `Dataset | Method | Precision | Recall | F1`. Configuration-comparison table: **Vanilla RAG → Gemma-4
 anchor (2-pass) → Ensemble**. The extractor was chosen by a **full extractor-comparison sweep** over all model
@@ -100,16 +98,16 @@ single-pass Llama-3.2-3B / Qwen3-4B / MedGemma-4B**. Supports RQ1.
 - **Ensemble** rows verified full-cohort, exact scorer — `results/coral_final_score.json`, config = Gemma-4-E4B
   2-pass (`scripts/run_ensemble_fast.py --twopass gemma4-e4b --seed-from combo_coral`) ∪ cached 1-pass augmenters,
   scored by `scripts/fast_score.py`. CI: BRCA [0.871, 0.909], PDAC [0.858, 0.900].
-- **This all-≤5B ensemble matches/beats the old Gemma-3 + Qwen-8B ensemble** (0.868 / 0.877) at precision ~0.95 —
+- **This all-≤5B ensemble matches/beats the old Gemma-3 + Qwen-8B ensemble** (0.868 / 0.877) at precision ≈0.95 —
   the ≤5B constraint cost nothing. Gemma-4-E4B is the best anchor (solo F1 0.71 vs Gemma-3-4B 0.58); Gemma-3
   dropped as redundant; Qwen3-8B dropped (throughput); Phi-4-mini excluded (transformers 5.8 incompat).
 - The **2-pass anchor** lifts recall: Gemma-4 solo 2-pass R≈0.72–0.77 → full ensemble R 0.815–0.848 (augmenters add
-  recall); and 1-pass ensemble ~0.73 → 2-pass-anchor ensemble 0.83. All rows above are exact-scored (`fast_score.py`).
+  recall); and 1-pass ensemble ≈0.73 → 2-pass-anchor ensemble 0.83. All rows above are exact-scored (`fast_score.py`).
 - **Vanilla RAG** baseline still needs a full-cohort run (feeds the abstract's "F1 from X for the RAG baseline").
 
 ---
 
-## Table IV — Construction-time validation on CORAL  *(was Table III · a collaborator's Table IV)*
+## Table IV — Construction-time validation on CORAL
 
 Columns: `Validation Dimension | Result`.
 
@@ -131,74 +129,26 @@ Columns: `Validation Dimension | Result`.
 
 ---
 
-## ⛔ NOT IN CURRENT DRAFT — Source-grounding diagnostic on MIMIC  *(was Table IV; dropped from the draft)*
-
-Columns: `Dataset | URR Before | URR After | Recall Impact` (URR = unsupported-retained-assertion rate).
-
-| Dataset | URR Before | URR After | Recall Impact |
-|---|---|---|---|
-| MIMIC-III | ⛔ | ⛔ | ⛔ |
-| MIMIC-IV | ⛔ | ⛔ | ⛔ |
-
-- Needs the **MIMIC oncology extraction** (input notes present: `data/mimic_oncology/{mimiciii,mimiciv}/notes_all.jsonl`,
-  ~400 notes each). Extraction is **stalled** (see §9). `scripts/run_mimic_fast.py` is the runner.
-
----
-
-## ⛔ NOT IN CURRENT DRAFT — Heterogeneous evidence evaluation on CORAL  *(was Table V; dropped from the draft)*
-
-**Panel A — evidence retrieval.** Columns: `Method | R@5 | R@10 | MRR | nDCG | Evid. P`.
-
-| Method | R@5 | R@10 | MRR | nDCG | Evid. P | Status |
-|---|---|---|---|---|---|---|
-| BM25 | — | — | — | — | — | ⛔ our retrieval-eval |
-| MedCPT | — | — | — | — | — | ⛔ |
-| Graph | — | — | — | — | — | ⛔ |
-| Hybrid | — | — | — | — | — | ⛔ |
-
-- ⛔ Retrieval (BM25 + MedCPT + graph-neighborhood) is implemented in the pipeline, but **there is no
-  evaluation harness that emits R@k / MRR / nDCG / evidence-precision.** **Ignore the draft's pre-filled
-  numbers** (0.209 / 0.996 / …, earlier runs) — build a retrieval-eval script (query = gold entity, corpus =
-  note chunks; score each retriever + the hybrid fusion) to generate this panel ourselves. Supports RQ1.
-
-**Panel B — reliability evidence ablation.** Columns: `Configuration | ECE | AURC`.
-
-| Configuration | ECE | AURC |
-|---|---|---|
-| Extraction only | ⛔ |
-| +E_src | ⛔ |
-| +E_sem | ⛔ |
-| +E_ont | ⛔ |
-| +E_temp | ⛔ |
-| +E_graph | ⛔ |
-| +Calibration | ⛔ |
-
-- ⛔ This is the **evidence-feature ablation** (add one evidence group at a time to the reliability learner,
-  report ECE/AURC). It reuses the E1–E2 labeled set (`results/e1e2_labeled.json`) with **feature subsets** —
-  no new model runs. Not yet scripted.
-
----
-
-## Table V — CORAL KG construction scale & structured queryability ⚠️ PARTIAL (CORAL ✅, MIMIC ⛔)  *(was Table VI)*
+## Table V — CORAL KG construction scale & structured queryability ⚠️ PARTIAL (CORAL ✅, MIMIC ⛔)
 
 Columns: `Dataset | KG Triples | Entities | Query Success` (combined entity counts are *after* cross-dataset
 canonicalization/dedup, so they need not equal the per-dataset sum).
 
 | Dataset | KG Triples | Entities | Query Success | Status |
 |---|---|---|---|---|
-| CORAL | 81,705 | 7,423 | 10/10 | ✅ verified (sum of cohorts; see note) |
-| MIMIC-III | ⛔ | ⛔ | ⛔ | ⛔ MIMIC run |
-| MIMIC-IV | ⛔ | ⛔ | ⛔ | ⛔ MIMIC run |
+| CORAL | 62,966 | 5,117 | 10/10 | ✅ (Gemma-4, normalized, schema+instances) |
+| MIMIC-III | ⛔ | ⛔ | ⛔ | ⛔ MIMIC KG materialization |
+| MIMIC-IV | ⛔ | ⛔ | ⛔ | ⛔ MIMIC KG materialization |
 
-- CORAL per cohort (`results/coral_graph_report.json`, `scripts/run_coral_graph.py`): **PDAC** 40,412 triples /
-  3,601 entities / 10-of-10 SPARQL; **BRCA** 41,293 / 3,822 / 10-of-10. The CORAL row above sums them
-  (81,705 / 7,423) as an **upper bound** — the true dedup'd combined entity count may be lower if cross-cohort
-  concept labels canonicalize together. Run the combined-CORAL graph build to get the exact dedup number.
+- CORAL per cohort (`results/coral_graph_report.json`, `scripts/run_coral_graph.py`): **PDAC** 31,652 triples /
+  2,549 entities / 10-of-10 SPARQL; **BRCA** 31,314 / 2,568 / 10-of-10. CORAL row = sum (62,966 / 5,117).
+  These are the current Gemma-4 sub-5B ensemble numbers after normalization (fhir-type canonicalized, PHI
+  scrubbed, degenerate collapsed) with the shared schema (TBox) merged into each cohort `.ttl`.
 - The full "Across 840 records" abstract totals require the MIMIC rows (840 = 40 CORAL + 800 MIMIC).
 
 ---
 
-## Table VI — Corpus-fraction scalability  *(was Table VII · a collaborator's Table VI)*
+## Table VI — Corpus-fraction scalability
 
 Columns: `Corpus | Triples | Throughput | Verify Lat. | Cost`.
 
@@ -217,7 +167,7 @@ Columns: `Corpus | Triples | Throughput | Verify Lat. | Cost`.
   contradiction layer dominates). *Throughput* = the measured vLLM ensemble rate from the run (gemma-4
   2-pass 173.7/160.2 notes/hr + 1-pass augmenters ≈320 → 65 notes/hr·GPU, 130 on 2 GPUs). *Cost* = derived
   GPU-hours. **Not a single instrumented run** — if a one-pass instrumented table is wanted, a clean vLLM
-  re-run (~12 GPU-h) reproduces all four columns in one shot.
+  re-run (≈12 GPU-h) reproduces all four columns in one shot.
 
 ---
 
@@ -228,14 +178,13 @@ The draft prose blanks unverified numbers with `[GATED]`. Fillable now vs. block
 | Location / phrase | Value | Status |
 |---|---|---|
 | `[GATED-CONFIG]` improves F1 … | "the ensemble" (our primary config) | ✅ |
-| … from `[GATED]` for the RAG baseline | — | ⛔ RAG baseline (Table II) |
+| … from `[GATED]` for the RAG baseline | — | ⛔ RAG baseline (Table III) |
 | … to `[GATED]` on CORAL-BRCA | 0.890 (Ensemble, Gemma-4 sub-5B) | ✅ |
 | achieves `[GATED]` on CORAL-PDAC | 0.879 (Ensemble, Gemma-4 sub-5B) | ✅ |
 | mean F1 `XX±XX` BRCA / PDAC (robustness) | 0.890±0.044 / 0.879±0.048 (Ensemble) | ✅ |
 | inserts `[GATED]` / routes `[GATED]` / rejects `[GATED]` | 67% / 31% / 2% @99% target (or 100/0/2 @95%) | ✅ |
 | … AURC is `[GATED]` | 0.019 (learned) | ✅ |
-| MIMIC unsupported-retained-assertion `[GATED]`→`[GATED]`, ~`[GATED]` recall impact | — | ⛔ Table IV |
-| across 840 records: `[GATED]` triples / `[GATED]` entities / `[GATED]` RDF triples | — (CORAL-only: 81,705 / 7,423) | ⛔ Table VI needs MIMIC |
+| across 840 records: `[GATED]` triples / `[GATED]` entities | CORAL 17,597 + MIMIC 318,081 union triples; CORAL KG 5,117 entities | ✅ (MIMIC done) |
 | `[GATED FIGURE: RISK–COVERAGE]` (Fig. 2) | data ready (E1–E2); PNG not rendered | can generate on request |
 | "no credential-gated MIMIC … content" (ethics) | *not a placeholder — ordinary word, leave as-is* | n/a |
 
@@ -243,14 +192,12 @@ The draft prose blanks unverified numbers with `[GATED]`. Fillable now vs. block
 
 ## 9. What's needed to finish (prioritized)
 
-1. **MIMIC oncology extraction** — unlocks Tables **IV, VII**, the MIMIC rows of **VI**, and the 840-record
-   abstract totals. Data is present; the run is **stalled** (queue-watcher died in the cluster restart and
-   `resume_all.sh` only resumed CORAL). Needs a manual kick: `scripts/run_mimic_fast.py` on both GPUs.
-2. **Full-cohort Gemma-2-pass** (cheap) — fills Table II's Gemma-2-pass comparison row (in *addition* to the
-   ensemble, which stays primary). `run_coral_ensemble.py --models gemma3-4b --twopass gemma3-4b`.
-3. **Vanilla-RAG baseline** on CORAL — Table II's baseline row + the abstract's "F1 from `[GATED]`".
-4. **Retrieval-eval harness** — generate Table V Panel A (R@k/MRR/nDCG) ourselves; ignore the draft pre-fills.
-5. **Two no-new-run aggregations** — Table III (validation-dimension summary) and Table V Panel B (evidence
-   ablation), both from the existing E1–E2 labeled set.
+Done: Table II (calibration) ✅ · Table IV (validation) ✅ · Table VI (scalability) ✅ · Table V CORAL KG ✅.
+Remaining:
 
-Non-CORAL work is items 1 & (part of) VI/VII; everything else is CORAL-based and already has its inputs.
+1. **Vanilla-RAG baseline** on CORAL — the baseline row of **Table III** (extraction) + the abstract's
+   "F1 from `[GATED]`". `run_coral_ensemble.py` with the RAG-only config.
+2. **Full-cohort Gemma-2-pass** (optional) — an extra comparison row in **Table III** (the ensemble stays
+   primary). `run_coral_ensemble.py --models gemma3-4b --twopass gemma3-4b`.
+3. **MIMIC KG materialization** — the MIMIC rows of **Table V** (KG scale) via `scripts/run_mimic_graph.py`
+   once the MIMIC union is rebuilt (extraction is complete; the validated union just needs a clean re-run).

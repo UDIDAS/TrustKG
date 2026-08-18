@@ -11,7 +11,7 @@ schema-valid, temporally consistent, and passes a trust threshold.
 > Target venue: **IEEE BigData 2026**. No patient data is committed (see [Data & ethics](#data--ethics)).
 >
 > **Canonical paper numbers → [docs/PAPER_TABLES.md](docs/PAPER_TABLES.md)** — a table-by-table reference
-> mirroring the draft's 7 tables, with every cell marked ✅ verified / ⛔ pending / ⚠️ needs decision, plus the
+> mirroring the draft's 6 tables, with every cell marked ✅ verified / ⛔ pending / ⚠️ needs decision, plus the
 > abstract `[GATED]` fill-in map. Update the manuscript from that file.
 
 ---
@@ -27,16 +27,16 @@ heterogeneous data at scale — not merely a clinical extractor. Mapped to the b
    rejected before materialization**, at a **tunable quality–coverage operating point**. **Demonstrated on
    CORAL** (held-out test): a learned reliability model is **near-perfectly calibrated (ECE 0.008 vs 0.172
    heuristic)** and drives a **tunable** gate — auto-inserting ≈everything at a 95% precision bar, or selectively
-   routing 31% to review and rejecting the riskiest to reach **98% precision at a 99% bar**. → Table I.
+   routing 31% to review and rejecting the riskiest to reach **98% precision at a 99% bar**. → Table II.
 2. **Variety — heterogeneous, multi-source integration.** One pipeline unifies expert oncology reports
    (CORAL), ICU notes (MIMIC-III), and longitudinal EHR (MIMIC-IV) — multi-institution, **pan-cancer** — into
-   a single ontology-aligned, FHIR-typed, SPARQL-queryable RDF graph. → Tables IV, VI.
+   a single ontology-aligned, FHIR-typed, SPARQL-queryable RDF graph. → Tables I, V.
 3. **Volume — scale at ingestion + bounded-cost scalability.** The oncology cohort is filtered from
-   **≈6.3 M diagnosis rows / 2 M+ notes / 546 K admissions** in BigQuery; Table VII characterizes
+   **≈6.3 M diagnosis rows / 2 M+ notes / 546 K admissions** in BigQuery; Table VI characterizes
    **throughput, verification latency, and cost as corpus fraction grows**, via a resident-model,
-   batched-inference extractor — a *scalable method*, not a huge graph. → Table VII.
+   batched-inference extractor — a *scalable method*, not a huge graph. → Table VI.
 4. **Value — unstructured → queryable analytics.** Narratives become **SPARQL-executable** cohort / temporal /
-   multi-hop queries. → Table VI.
+   multi-hop queries. → Table V.
 
 **Why this reads as BigData, not clinical-NLP:** the admission-control mechanism is **domain-general** (it
 governs any LLM-to-graph ingestion); the evaluation foregrounds the **quality–coverage trade-off and scaling
@@ -84,7 +84,7 @@ MIMIC-scale evaluation, and hybrid BM25 + MedCPT + graph retrieval.
 **On comparability.** These works use different datasets and outputs (literature vs patient KGs; FHIR
 resources vs RDF), so no shared external benchmark exists. TRUST-KG therefore compares **on its own gold
 data**: prior-style single-threshold *heuristic trust* vs *learned + calibrated* selective admission on
-held-out CORAL (Table I), against a Vanilla-RAG floor (Table II), plus the direct delta over the
+held-out CORAL (Table II), against a Vanilla-RAG floor (Table III), plus the direct delta over the
 preliminary version above. (Fuller internal positioning + must-cites: [docs/RELATED_WORK.md](docs/RELATED_WORK.md).)
 
 ---
@@ -185,15 +185,15 @@ half the parameter budget — the all-≤5B constraint cost nothing. The 2-pass 
 
 **Stage 2 — Validation** · trust-filter (δ=0.4): a **no-op** here (nothing pruned → precision held).
 
-**Stage 3–4 — RDF materialization + SPARQL cohort queries** (all queries execute) → Table **VI**:
+**Stage 3–4 — RDF materialization (schema + instances) + SPARQL cohort queries** (all queries execute) → Table **V**:
 
 | | CORAL-PDAC | CORAL-BRCA |
 |---|---:|---:|
-| RDF triples | 40,412 | 41,293 |
-| KG entities | 3,601 | 3,822 |
-| ontology-linked | 163 | 223 |
-| conditions / medications / procedures | 1178 / 558 / 1351 | 1351 / 744 / 1474 |
-| temporal facts | 8,212 | 7,912 |
+| RDF triples | 31,652 | 31,314 |
+| KG entities | 2,549 | 2,568 |
+| ontology-linked | 156 | 196 |
+| conditions / medications / procedures | 1259 / 514 / 886 | 1617 / 273 / 1056 |
+| temporal facts | 4,759 | 4,374 |
 | cancer cohort (SPARQL) | 20/20 | 20/20 |
 | chemotherapy cohort (SPARQL) | 17/20 | 13/20 |
 | SPARQL queries executed | **10/10** | **10/10** |
@@ -234,7 +234,7 @@ Every extracted triple gets a reliability score; a **learned reliability** model
 structural features, trained on the train split) beats the heuristic trust and enables **selective admission**
 at a target precision.
 
-Table I — calibration part (held-out test, lower better):
+Table II — calibration part (held-out test, lower better):
 
 | Reliability | ECE | Brier | NLL |
 |---|---|---|---|
@@ -259,7 +259,7 @@ In short: **ECE checks honesty (calibration); Brier and NLL are *proper scoring 
 how decisively the score separates right from wrong.** All three agree here that the learned reliability is the
 better-behaved probability — which is what makes the admission threshold trustworthy.
 
-Table I — selective admission (tunable operating point). Because the Gemma-4 ensemble is already ≈95% precise,
+Table II — selective admission (tunable operating point). Because the Gemma-4 ensemble is already ≈95% precise,
 a 95% target admits nearly everything; **raising the bar makes the calibrated gate selectively route/reject the
 riskiest facts** — the tunable quality–coverage tradeoff:
 
@@ -303,7 +303,7 @@ augmenters ≈2× faster) — a multi-day run in **≈15–18 h on 2× A6000**, 
 per-note checkpointed and reboot-resilient (`scripts/mimic_vllm_cohort.sh` + `scripts/mimic_resume.sh`;
 env recipe in `scripts/vllm_env.sh`). A **seed gate** (first ≈100 notes: triples/note, source-grounding,
 FHIR mix) confirms MIMIC quality before the full corpus commits. The run is instrumented at 25/50/75/100%
-corpus fractions (throughput, retrieval/verification latency, KG growth, cost) → Tables IV, VI, VII.
+corpus fractions (throughput, retrieval/verification latency, KG growth, cost) → Table VI.
 
 *Distillation* (LoRA-fine-tune one model on the ensemble's trust-filtered triples, validated on the CORAL
 **test** split) stays a compelling **future-work** direction for cheaper deployment — but it is off the
@@ -364,16 +364,16 @@ confidently *rejecting* it (vs demoting) is the case that motivates real termino
 
 **Done**
 - Extractor selected by full extractor-comparison sweep: **Gemma-4-E4B 2-pass anchor + Llama-3.2-3B / Qwen3-4B / MedGemma-4B** (all ≤5B); F1 0.879 / 0.890.
-- Full 40-patient CORAL run, per cohort → Table II.
-- CORAL end-to-end: RDF materialization + SPARQL cohort queries, per cohort → Table VI.
-- Veracity: on the Gemma-4 ensemble — learned reliability near-perfectly calibrated (ECE 0.008 vs 0.172); tunable admission gate (95%→auto-insert all, 99%→route 31% to review at 98% precision) → Table I.
+- Full 40-patient CORAL run, per cohort → Table III.
+- CORAL end-to-end: RDF materialization + SPARQL cohort queries, per cohort → Table V.
+- Veracity: on the Gemma-4 ensemble — learned reliability near-perfectly calibrated (ECE 0.008 vs 0.172); tunable admission gate (95%→auto-insert all, 99%→route 31% to review at 98% precision) → Table II.
 - MIMIC-III / MIMIC-IV oncology cohorts curated (400 + 400 notes).
 
 **In progress**
-- MIMIC scale-up = **full 4-model ensemble union via vLLM** (running, ≈15–18 h on 2× A6000; seed gate passed at 92% source-grounding) → Tables IV, VI, VII.
+- MIMIC scale-up = **full 4-model ensemble union via vLLM** (running, ≈15–18 h on 2× A6000; seed gate passed at 92% source-grounding) → Table VI.
 
 **Next**
-- Vanilla-RAG baseline row (Table II) + validation-dimension (Table III) and retrieval (Table V) aggregations.
+- Vanilla-RAG baseline row (Table III) + validation-dimension (Table IV) aggregation.
 - Extend calibration + selective admission to MIMIC. (Distillation → future work.)
 
 ---
