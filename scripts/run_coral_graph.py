@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.WARNING, format="%(message)s")
 from src.graph.rdf_builder import build_patient_graph, build_cohort_graph, serialize_graph, run_sparql_queries
 
 DELTA = 0.4
-SRC = Path("results/extraction/ens3/union")
+SRC = Path("results/extraction/coral_final/union")   # current Gemma-4 sub-5B ensemble (paper Table II)
 OUT = Path("results/rdf"); OUT.mkdir(parents=True, exist_ok=True)
 
 # cohort-retrieval queries (Table XV) on top of the module defaults

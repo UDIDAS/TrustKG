@@ -173,9 +173,11 @@ def normalize_triples(triples: list[dict]) -> tuple[list[dict], Counter]:
         out["fhir_type"] = cft
         out["_norm_entity"] = _norm(e)
 
-        # scrub de-id placeholders from the provenance span kept on the triple
+        # scrub de-id placeholders from any free-text field kept on the triple
         if out.get("evidence_span"):
             out["evidence_span"] = scrub_phi(out["evidence_span"])
+        if out.get("temporal_anchor"):
+            out["temporal_anchor"] = scrub_phi(out["temporal_anchor"])
 
         # 6. dedup by canonical (entity, attribute, value, type)
         key = (_norm(e), _norm(a), _norm(v), cft)
