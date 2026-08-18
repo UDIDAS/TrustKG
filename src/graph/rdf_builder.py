@@ -212,10 +212,11 @@ def build_patient_graph(
         # Relation predicate
         predicate = TRUSTKG[_safe_uri(attribute)] if attribute else TRUSTKG.hasValue
 
-        # Value — use Literal for simple values, URI for complex
-        if re.match(r"^[\d.]+$", value):
+        # Value — typed float literal only if it truly parses as a number
+        # (the regex ^[\d.]+$ also matches '...' / '1.2.3', so guard the float() cast)
+        try:
             value_node = Literal(float(value), datatype=XSD.float)
-        else:
+        except (ValueError, TypeError):
             value_node = Literal(value)
 
         # Core triple
