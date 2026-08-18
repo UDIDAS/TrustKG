@@ -36,7 +36,25 @@ ENSEMBLE_NPH = ENSEMBLE_NPH_1GPU * N_GPUS
 FRACTIONS = [0.25, 0.50, 0.75, 1.00]
 
 
+MODELS = ["gemma4-e4b", "llama32-3b", "qwen3-4b", "medgemma-4b"]
+
+
+def _dedup(ts):
+    seen, out = set(), []
+    for t in ts:
+        if not isinstance(t, dict):
+            continue
+        k = (str(t.get("entity", "")).lower().strip(),
+             str(t.get("attribute", "")).lower().strip(),
+             str(t.get("value", "")).lower().strip())
+        if k not in seen:
+            seen.add(k); out.append(t)
+    return out
+
+
 def load_corpus():
+    """Ensemble-union triples per note, pooled+deduped from the complete bymodel caches
+    (KG growth = # triples). Independent of the slow Phase-B validated union."""
     notes = {}
     for coh in ("mimiciii", "mimiciv"):
         for line in open(f"data/mimic_oncology/{coh}/notes_all.jsonl"):
@@ -44,11 +62,15 @@ def load_corpus():
             notes[str(r.get("note_id"))] = r.get("text", "")
     items = []
     for coh in ("mimiciii", "mimiciv"):
-        for f in sorted(glob.glob(f"results/extraction/mimic_{coh}/union/*.json")):
-            d = json.load(open(f))
-            nid = str(d.get("id") or Path(f).stem)
-            items.append((nid, [t for t in d.get("triples", []) if isinstance(t, dict)],
-                          notes.get(nid, "")))
+        ids = sorted({Path(p).stem for m in MODELS
+                      for p in glob.glob(f"results/extraction/mimic_{coh}/bymodel/{m}/*.json")})
+        for nid in ids:
+            pooled = []
+            for m in MODELS:
+                f = Path(f"results/extraction/mimic_{coh}/bymodel/{m}/{nid}.json")
+                if f.exists():
+                    pooled += json.load(open(f)).get("triples", [])
+            items.append((nid, _dedup(pooled), notes.get(nid, "")))
     return items
 
 
