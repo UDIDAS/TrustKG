@@ -182,7 +182,7 @@ The draft prose blanks unverified numbers with `[GATED]`. Fillable now vs. block
 | Location / phrase | Value | Status |
 |---|---|---|
 | `[GATED-CONFIG]` improves F1 … | "the ensemble" (our primary config) | ✅ |
-| … from `[GATED]` for the RAG baseline | — | ⛔ RAG baseline (Table III) |
+| … from `[GATED]` for the RAG baseline | 0.787 PDAC / 0.805 BRCA (Vanilla RAG) → 0.879 / 0.890 (Ensemble) | ✅ Table III |
 | … to `[GATED]` on CORAL-BRCA | 0.890 (Ensemble, Gemma-4 sub-5B) | ✅ |
 | achieves `[GATED]` on CORAL-PDAC | 0.879 (Ensemble, Gemma-4 sub-5B) | ✅ |
 | mean F1 `XX±XX` BRCA / PDAC (robustness) | 0.890±0.044 / 0.879±0.048 (Ensemble) | ✅ |
@@ -196,12 +196,9 @@ The draft prose blanks unverified numbers with `[GATED]`. Fillable now vs. block
 
 ## 9. What's needed to finish (prioritized)
 
-Done: Table II (calibration) ✅ · Table IV (validation) ✅ · Table VI (scalability) ✅ · Table V CORAL KG ✅.
-Remaining:
+**All six tables have their real numbers:** Table I (descriptive) · II calibration ✅ · III extraction incl.
+Vanilla-RAG baseline ✅ · IV validation ✅ · V KG scale, CORAL + MIMIC ✅ · VI scalability ✅.
 
-1. **Vanilla-RAG baseline** on CORAL — the baseline row of **Table III** (extraction) + the abstract's
-   "F1 from `[GATED]`". `run_coral_ensemble.py` with the RAG-only config.
-2. **Full-cohort Gemma-2-pass** (optional) — an extra comparison row in **Table III** (the ensemble stays
-   primary). `run_coral_ensemble.py --models gemma3-4b --twopass gemma3-4b`.
-3. **MIMIC KG materialization** — the MIMIC rows of **Table V** (KG scale) via `scripts/run_mimic_graph.py`
-   once the MIMIC union is rebuilt (extraction is complete; the validated union just needs a clean re-run).
+Optional only:
+1. **Full-cohort Gemma-2-pass** — an extra comparison row in **Table III** (the ensemble stays primary).
+   `run_coral_ensemble.py --models gemma3-4b --twopass gemma3-4b`.
