@@ -131,18 +131,17 @@ Columns: `Validation Dimension | Result`.
 
 ## Table V — CORAL KG construction scale & structured queryability ⚠️ PARTIAL (CORAL ✅, MIMIC ⛔)
 
-Columns: `Dataset | KG Triples | Entities | Query Success` (combined entity counts are *after* cross-dataset
-canonicalization/dedup, so they need not equal the per-dataset sum).
+Columns: `Dataset | KG Triples | Entities | Query Success` — reported per cohort/subset.
 
 | Dataset | KG Triples | Entities | Query Success | Status |
 |---|---|---|---|---|
-| CORAL | 62,966 | 5,117 | 10/10 | ✅ (Gemma-4, normalized, schema+instances) |
+| CORAL-PDAC | 31,652 | 2,549 | 10/10 | ✅ (Gemma-4, normalized, schema+instances) |
+| CORAL-BRCA | 31,314 | 2,568 | 10/10 | ✅ (Gemma-4, normalized, schema+instances) |
 | MIMIC-III | ⛔ | ⛔ | ⛔ | ⛔ MIMIC KG materialization |
 | MIMIC-IV | ⛔ | ⛔ | ⛔ | ⛔ MIMIC KG materialization |
 
-- CORAL per cohort (`results/coral_graph_report.json`, `scripts/run_coral_graph.py`): **PDAC** 31,652 triples /
-  2,549 entities / 10-of-10 SPARQL; **BRCA** 31,314 / 2,568 / 10-of-10. CORAL row = sum (62,966 / 5,117).
-  These are the current Gemma-4 sub-5B ensemble numbers after normalization (fhir-type canonicalized, PHI
+- Source: `results/coral_graph_report.json` (`scripts/run_coral_graph.py`). CORAL combined = 62,966 triples /
+  5,117 entities. Current Gemma-4 sub-5B ensemble numbers after normalization (fhir-type canonicalized, PHI
   scrubbed, degenerate collapsed) with the shared schema (TBox) merged into each cohort `.ttl`.
 - The full "Across 840 records" abstract totals require the MIMIC rows (840 = 40 CORAL + 800 MIMIC).
 
