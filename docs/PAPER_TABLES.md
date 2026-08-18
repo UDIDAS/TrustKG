@@ -129,7 +129,7 @@ Columns: `Validation Dimension | Result`.
 
 ---
 
-## Table V — CORAL KG construction scale & structured queryability ⚠️ PARTIAL (CORAL ✅, MIMIC ⛔)
+## Table V — KG construction scale & structured queryability ✅ COMPLETE
 
 Columns: `Dataset | KG Triples | Entities | Query Success` — reported per cohort/subset.
 
@@ -137,13 +137,15 @@ Columns: `Dataset | KG Triples | Entities | Query Success` — reported per coho
 |---|---|---|---|---|
 | CORAL-PDAC | 31,652 | 2,549 | 10/10 | ✅ (Gemma-4, normalized, schema+instances) |
 | CORAL-BRCA | 31,314 | 2,568 | 10/10 | ✅ (Gemma-4, normalized, schema+instances) |
-| MIMIC-III | ⛔ | ⛔ | ⛔ | ⛔ MIMIC KG materialization |
-| MIMIC-IV | ⛔ | ⛔ | ⛔ | ⛔ MIMIC KG materialization |
+| MIMIC-III | 460,821 | 26,186 | 10/10 | ✅ (Gemma-4, normalized, schema+instances) |
+| MIMIC-IV | 480,041 | 27,740 | 10/10 | ✅ (Gemma-4, normalized, schema+instances) |
 
-- Source: `results/coral_graph_report.json` (`scripts/run_coral_graph.py`). CORAL combined = 62,966 triples /
-  5,117 entities. Current Gemma-4 sub-5B ensemble numbers after normalization (fhir-type canonicalized, PHI
-  scrubbed, degenerate collapsed) with the shared schema (TBox) merged into each cohort `.ttl`.
-- The full "Across 840 records" abstract totals require the MIMIC rows (840 = 40 CORAL + 800 MIMIC).
+- Source: `results/coral_graph_report.json` / `results/mimic_graph_report.json`
+  (`scripts/run_coral_graph.py`, `scripts/run_mimic_graph.py`). Current Gemma-4 sub-5B ensemble after
+  normalization (fhir-type canonicalized, PHI scrubbed, degenerate collapsed) + shared schema (TBox) merged
+  into each `.ttl`. All 4 subsets pass 10/10 SPARQL.
+- **Across all 840 records** (40 CORAL + 800 MIMIC): **1,003,828 RDF triples**, **59,043 KG entities**
+  (CORAL 62,966 / 5,117 + MIMIC 940,862 / 53,926).
 
 ---
 
