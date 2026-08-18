@@ -110,7 +110,7 @@ single-pass Llama-3.2-3B / Qwen3-4B / MedGemma-4B**. Supports RQ1.
 
 ---
 
-## Table IV — Construction-time validation on CORAL
+## Table IV — Construction-time validation on CORAL ✅ COMPLETE
 
 Columns: `Validation Dimension | Result`.
 
@@ -152,7 +152,7 @@ Columns: `Dataset | KG Triples | Entities | Query Success` — reported per coho
 
 ---
 
-## Table VI — Corpus-fraction scalability
+## Table VI — Corpus-fraction scalability ✅ COMPLETE
 
 Columns: `Corpus | Triples | Throughput | Verify Lat. | Cost`.
 
