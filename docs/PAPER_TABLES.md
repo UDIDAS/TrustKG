@@ -43,7 +43,17 @@ Big-Data evaluation.
 
 ---
 
-## 1. Table I — Reliability calibration & selective KG admission (held-out CORAL) ✅ COMPLETE
+> **Numbering aligned to the current Overleaf draft (`docs/BigData_2026_TrustKG.pdf`, 6 tables).**
+> The draft added **Table I = Datasets** (shifting the front tables +1) and **dropped** the old
+> source-grounding (MIMIC) and heterogeneous-evidence tables. `(was Table X)` = the pre-draft number.
+> a collaborator's "Table IV" = validation and "Table VI" = scalability are both **draft** numbers.
+
+## Table I — Datasets used in the evaluation  *(new in draft — descriptive)*
+
+CORAL (PDAC + BRCA, 20 patients each) and MIMIC-III / MIMIC-IV oncology subsets (400 notes each,
+malignant-neoplasm ICD-filtered at ingestion). Descriptive overview — no computed metrics.
+
+## Table II — Reliability calibration & selective KG admission (held-out CORAL) ✅ COMPLETE  *(was Table I)*
 
 Columns: `Method | ECE | Brier | NLL | AURC | Cov.@95% | Insert | Review | Reject` (lower ECE/Brier/NLL/AURC
 better; higher Cov.@95% better; thresholds chosen independently on dev at the same ≥95% precision target).
@@ -71,7 +81,7 @@ inserts ≈100% (nothing to reject); the **tunable operating-point curve** is th
 
 ---
 
-## 2. Table II — Entity-level extraction on CORAL ✅ Ensemble verified · ⛔ baseline rows to run
+## Table III — Entity-level extraction on CORAL ✅ Ensemble verified · ⛔ baseline rows to run  *(was Table II)*
 
 Columns: `Dataset | Method | Precision | Recall | F1`. Configuration-comparison table: **Vanilla RAG → Gemma-4
 anchor (2-pass) → Ensemble**. The extractor was chosen by a **full extractor-comparison sweep** over all model
@@ -99,7 +109,7 @@ single-pass Llama-3.2-3B / Qwen3-4B / MedGemma-4B**. Supports RQ1.
 
 ---
 
-## 3. Table III — Construction-time validation on CORAL ⛔ COMPUTABLE, not yet aggregated
+## Table IV — Construction-time validation on CORAL  *(was Table III · a collaborator's Table IV)*
 
 Columns: `Validation Dimension | Result`.
 
@@ -118,7 +128,7 @@ Columns: `Validation Dimension | Result`.
 
 ---
 
-## 4. Table IV — Source-grounding diagnostic on MIMIC ⛔ PENDING (MIMIC run)
+## ⛔ NOT IN CURRENT DRAFT — Source-grounding diagnostic on MIMIC  *(was Table IV; dropped from the draft)*
 
 Columns: `Dataset | URR Before | URR After | Recall Impact` (URR = unsupported-retained-assertion rate).
 
@@ -132,7 +142,7 @@ Columns: `Dataset | URR Before | URR After | Recall Impact` (URR = unsupported-r
 
 ---
 
-## 5. Table V — Heterogeneous evidence evaluation on CORAL ⚠️ (Panel A unverified) + ⛔ (Panel B)
+## ⛔ NOT IN CURRENT DRAFT — Heterogeneous evidence evaluation on CORAL  *(was Table V; dropped from the draft)*
 
 **Panel A — evidence retrieval.** Columns: `Method | R@5 | R@10 | MRR | nDCG | Evid. P`.
 
@@ -166,7 +176,7 @@ Columns: `Dataset | URR Before | URR After | Recall Impact` (URR = unsupported-r
 
 ---
 
-## 6. Table VI — KG construction scale & structured queryability ⚠️ PARTIAL (CORAL ✅, MIMIC ⛔)
+## Table V — CORAL KG construction scale & structured queryability ⚠️ PARTIAL (CORAL ✅, MIMIC ⛔)  *(was Table VI)*
 
 Columns: `Dataset | KG Triples | Entities | Query Success` (combined entity counts are *after* cross-dataset
 canonicalization/dedup, so they need not equal the per-dataset sum).
@@ -185,7 +195,7 @@ canonicalization/dedup, so they need not equal the per-dataset sum).
 
 ---
 
-## 7. Table VII — Corpus-fraction scalability ⛔ PENDING (MIMIC throughput)
+## Table VI — Corpus-fraction scalability  *(was Table VII · a collaborator's Table VI)*
 
 Columns: `Corpus | Triples | Throughput | Verify Lat. | Cost`.
 
