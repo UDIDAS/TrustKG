@@ -59,23 +59,37 @@ better; higher Cov.@95% better; thresholds chosen independently on dev at the sa
 | Method | ECE | Brier | NLL | AURC | Cov.@95% | Insert | Review | Reject |
 |---|---|---|---|---|---|---|---|---|
 | Heuristic Trust | 0.172 | 0.082 | 0.315 | 0.031 | 0.981 | 100% | 0% | 0% |
-| **Learned Reliability** | **0.008** | **0.046** | **0.181** | **0.019** | **0.992** | 67% | 31% | 2% |
-| Learned + Calibration | 0.014 | 0.048 | 0.190 | 0.019 | 0.992 | 67% | 31% | 2% |
+| **Learned Reliability** | **0.008** | **0.046** | **0.181** | **0.019** | **0.992** | 100% | 0% | 2% |
+| Learned + Calibration | 0.014 | 0.048 | 0.190 | 0.019 | 0.992 | 100% | 0% | 2% |
 
-Insert/Review/Reject shown at the **99%-precision operating point** (achieving 98.1% insert-precision) — the point
-where the gate does visible work. Because the Gemma-4 ensemble is already ≈95% precise, at a 95% target the policy
-inserts ≈100% (nothing to reject); the **tunable operating-point curve** is the real story:
+**Operating-point definition (important — verified from `e1e3_results.json` / TABLE IX).** The main table's
+Insert/Review/Reject is at the **95%-precision target, with each method thresholded *independently* on dev**
+(a *per-method* op point — **not** a shared threshold). At the 95% bar all three insert ≈100%: the Gemma-4
+ensemble is already ≈95% precise, so almost nothing needs routing (only the ≈2% lowest-scored are rejected;
+review ≈0). **The per-method differentiator is therefore calibration/risk (ECE, AURC), not the 95%-point split.**
 
-| Target precision | Insert | Review | Reject | Achieved precision |
+Selective admission shows its value as the precision target rises — the tunable **operating-point curve of
+the Calibrated-Selective method** (same model, stricter target):
+
+| Target precision (Calibrated-Selective) | Insert | Review | Reject | Achieved precision |
 |---|---|---|---|---|
 | 95% | 100% | 0% | 2% | 0.949 |
 | 98% | 86% | 12% | 2% | 0.967 |
 | 99% | 67% | 31% | 2% | 0.981 |
 
-- Verified exact on the new Gemma-4 ensemble (`results/e1e3_results.json`, seeded/reproducible). Headline calibration
-  win: Learned ECE **0.008** vs Heuristic 0.172. Post-hoc calibration is a small no-op (0.008→0.014 ECE).
-- **Script:** `scripts/exp_calibration_selective.py` → `results/e1e3_results.json`. Seeded (`random_state=0`), frozen: two runs identical.
-- Test set: 3,569 held-out candidate triples; overall correct-rate 0.872.
+**⚠️ The 67/31/2 row is this one method at the 99% target — NOT a cross-method comparison at a shared
+threshold.** Do not present Heuristic (100/0/0) and Learned (67/31/2) as the same operating point.
+
+- Verified exact on the Gemma-4 `coral_final` ensemble (`results/e1e3_results.json`, seeded `random_state=0`,
+  reproducible). Regenerate: `scripts/exp_calibration_selective.py` (default now `TRUSTKG_UNION_DIR=coral_final`
+  — the *reported* extractor; the old default pointed at `ens3` and gave different numbers).
+- Headline: Learned ECE **0.008** vs Heuristic 0.172; AURC **0.019** vs 0.031.
+- Held-out **test set: 3,053 triples** (of 17,597 labeled); overall correct-rate **0.952**.
+  **⚠️ The draft caption's "3,569 eligible candidates / correct-rate 0.872" are the OLD ens3 numbers — update
+  to 3,053 / 0.952 (Gemma-4).**
+- **Known bands() edge case:** for a very-precise model the 95%-precision cut sits below the reject cut, so
+  Insert and Reject can overlap (Insert 100% + Reject 2% > 100%). Only affects the tiny reject band; the
+  Insert/Review split and the curve are unaffected. Fix (make bands disjoint) is optional/cosmetic.
 
 ---
 
@@ -113,6 +127,14 @@ single-pass Llama-3.2-3B / Qwen3-4B / MedGemma-4B**. Supports RQ1.
 ## Table IV — Construction-time validation on CORAL ✅ COMPLETE
 
 Columns: `Validation Dimension | Result`.
+
+**Definition (verified from `scripts/table4_validation.py`): each Result is the *mean per-triple validator
+score* for that layer — a graded 0–1 score from `validate_triple`, arithmetic-mean over all 17,597 CORAL
+ensemble triples. It is NOT a binary pass/fail rate.** Per layer: *source grounding* = fraction of the
+triple's entity/value/evidence found in the source note (Layer 1); *ontology compatibility* = 1.0 known
+concept / 0.7 valid-FHIR-type / 0.3 otherwise (Layer 2); *schema validity* = attribute-vs-FHIR-type match,
+1.0/0.8/0.5/0.3 (Layer 3); *temporal consistency* = 0.7 neutral / higher-lower by plausibility (Layer 4);
+*contradiction control* = 1.0 clean / 0.1 on a detected binary contradiction (Layer 5).
 
 | Validation Dimension | Result |
 |---|---|

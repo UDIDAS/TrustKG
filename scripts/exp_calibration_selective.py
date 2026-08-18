@@ -22,8 +22,8 @@ os.environ.setdefault("TRUSTKG_ROOT", "/home/ud3d4/Desktop/TrustKG")
 
 VAL_KEYS = ["source_grounding", "ontology_check", "schema_check", "temporal_consistency", "contradiction_score"]
 FHIR_CATS = ["Condition", "Observation", "Procedure", "MedicationStatement"]
-UNION_DIR = os.environ.get("TRUSTKG_UNION_DIR", "results/extraction/ens3/union")
-CACHE = Path(os.environ.get("TRUSTKG_E1E2_CACHE", "results/e1e2_labeled.json"))
+UNION_DIR = os.environ.get("TRUSTKG_UNION_DIR", "results/extraction/coral_final/union")
+CACHE = Path(os.environ.get("TRUSTKG_E1E2_CACHE", "results/e1e2_labeled_coralfinal.json"))
 
 
 def build_labeled():
@@ -138,3 +138,29 @@ json.dump({"n": len(data), "correct_rate": float(y.mean()), "test_n": int(te.sum
            "curve": curve},
           open("results/e1e3_results.json", "w"), indent=2)
 print("\nSaved results/e1e3_results.json")
+
+# ── Figure 2 — risk–coverage curve (SAME frozen held-out TEST predictions as Table II) ──
+try:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    def _rc(conf, yv):
+        o = np.argsort(-conf); ys = yv[o]; k = np.arange(1, len(ys) + 1)
+        return k / len(ys), 1.0 - np.cumsum(ys) / k
+
+    Path("figures").mkdir(exist_ok=True)
+    plt.figure(figsize=(5.0, 3.6))
+    for name, conf, aur in [("Heuristic trust", trust_cal_te, aurc(trust_cal_te, yte)),
+                            ("Learned reliability", learn_te, aurc(learn_te, yte))]:
+        cov, risk = _rc(conf, yte)
+        plt.plot(cov, risk, linewidth=2, label=f"{name} (AURC={aur:.3f})")
+    plt.xlabel("Coverage"); plt.ylabel("Risk (error rate among admitted)")
+    plt.title("Risk–coverage — held-out CORAL test (Gemma-4 ensemble)")
+    plt.legend(loc="upper left"); plt.grid(alpha=0.3); plt.tight_layout()
+    plt.savefig("figures/risk_coverage.pdf")
+    plt.savefig("figures/risk_coverage.png", dpi=150)
+    plt.close()
+    print(f"Saved figures/risk_coverage.pdf  (n_test={int(te.sum())})")
+except Exception as e:
+    print(f"figure skipped: {e}")
