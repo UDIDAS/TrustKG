@@ -89,8 +89,17 @@ def _norm(s) -> str:
     return re.sub(r"\s+", " ", str(s or "").strip().lower())
 
 
+_PHI_SCRUB = re.compile(r"\[[^\]]*\]|\*\*\*\*\*+")
+
+
 def is_phi(text) -> bool:
     return bool(_PHI.search(str(text or "")))
+
+
+def scrub_phi(text) -> str:
+    """Replace de-identification placeholders ([Known lastname ...], *****) with REDACTED,
+    so provenance spans on kept triples carry no de-id artifacts."""
+    return re.sub(r"\s+", " ", _PHI_SCRUB.sub(" REDACTED ", str(text or ""))).strip()
 
 
 def is_vacuous(entity) -> bool:
@@ -163,6 +172,10 @@ def normalize_triples(triples: list[dict]) -> tuple[list[dict], Counter]:
             report["retyped_fhir"] += 1
         out["fhir_type"] = cft
         out["_norm_entity"] = _norm(e)
+
+        # scrub de-id placeholders from the provenance span kept on the triple
+        if out.get("evidence_span"):
+            out["evidence_span"] = scrub_phi(out["evidence_span"])
 
         # 6. dedup by canonical (entity, attribute, value, type)
         key = (_norm(e), _norm(a), _norm(v), cft)

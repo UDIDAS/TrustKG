@@ -142,6 +142,7 @@ def build_patient_graph(
     include_trust: bool = True,
     include_temporal: bool = True,
     trust_threshold: float = 0.0,
+    normalize: bool = True,
 ) -> Graph:
     """Build an RDF graph from validated triples for one patient.
 
@@ -163,6 +164,12 @@ def build_patient_graph(
     g.bind("rxnorm", RXNORM)
     g.bind("fhir", FHIR)
     g.bind("schema", SCHEMA)
+
+    # Deterministic structural normalization before materialization: canonicalize fhir_type,
+    # drop PHI / vacuous / administrative, collapse degenerate, dedup (triple_normalizer.py).
+    if normalize:
+        from src.graph.triple_normalizer import normalize_triples
+        triples, _ = normalize_triples(triples)
 
     # Trust-aware filtering (§3.4): only retain triples with T(τ) ≥ δ
     if trust_threshold > 0:
