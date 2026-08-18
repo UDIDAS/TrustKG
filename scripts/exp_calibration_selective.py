@@ -100,7 +100,7 @@ def bands(dev_c, dev_y, te_c, te_y, hi=0.95, lo=0.5):
     idx = np.where(pr >= hi)[0]; thi = ps[idx[-1]] if len(idx) else 1.01
     oa = np.argsort(dev_c); ys2, ps2 = dev_y[oa], dev_c[oa]; pl = np.cumsum(ys2)/np.arange(1, len(ys2)+1)
     idl = np.where(pl <= lo)[0]; tlo = ps2[idl[-1]] if len(idl) else -0.01
-    ins = te_c >= thi; rej = te_c < tlo; rev = ~ins & ~rej
+    ins = te_c >= thi; rej = (te_c < tlo) & ~ins; rev = ~ins & ~rej   # disjoint: ins+rev+rej = 1
     ip = te_y[ins].mean() if ins.sum() else float("nan")
     return ins.mean(), rev.mean(), rej.mean(), ip
 
