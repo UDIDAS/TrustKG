@@ -79,7 +79,7 @@ inserts ≈100% (nothing to reject); the **tunable operating-point curve** is th
 
 ---
 
-## Table III — Entity-level extraction on CORAL ✅ Ensemble verified · ⛔ baseline rows to run
+## Table III — Entity-level extraction on CORAL ✅ COMPLETE
 
 Columns: `Dataset | Method | Precision | Recall | F1`. Configuration-comparison table: **Vanilla RAG → Gemma-4
 anchor (2-pass) → Ensemble**. The extractor was chosen by a **full extractor-comparison sweep** over all model
@@ -88,10 +88,10 @@ single-pass Llama-3.2-3B / Qwen3-4B / MedGemma-4B**. Supports RQ1.
 
 | Dataset | Method | Precision | Recall | F1 | Status |
 |---|---|---|---|---|---|
-| CORAL-BRCA | Vanilla RAG | — | — | — | ⛔ run baseline |
+| CORAL-BRCA | Vanilla RAG | 0.971 | 0.698 | 0.805 ± 0.089 | ✅ (exact) |
 | CORAL-BRCA | Gemma-4 anchor (2-pass, solo) | 0.972 | 0.770 | 0.854 | ✅ (exact) |
 | CORAL-BRCA | **Ensemble** (primary) | **0.940** | **0.848** | **0.890 ± 0.044** | ✅ verified (coral_final) |
-| CORAL-PDAC | Vanilla RAG | — | — | — | ⛔ run baseline |
+| CORAL-PDAC | Vanilla RAG | 0.984 | 0.661 | 0.787 ± 0.065 | ✅ (exact) |
 | CORAL-PDAC | Gemma-4 anchor (2-pass, solo) | 0.983 | 0.721 | 0.829 | ✅ (exact) |
 | CORAL-PDAC | **Ensemble** (primary) | **0.958** | **0.815** | **0.879 ± 0.048** | ✅ verified (coral_final) |
 
@@ -103,7 +103,10 @@ single-pass Llama-3.2-3B / Qwen3-4B / MedGemma-4B**. Supports RQ1.
   dropped as redundant; Qwen3-8B dropped (throughput); Phi-4-mini excluded (transformers 5.8 incompat).
 - The **2-pass anchor** lifts recall: Gemma-4 solo 2-pass R≈0.72–0.77 → full ensemble R 0.815–0.848 (augmenters add
   recall); and 1-pass ensemble ≈0.73 → 2-pass-anchor ensemble 0.83. All rows above are exact-scored (`fast_score.py`).
-- **Vanilla RAG** baseline still needs a full-cohort run (feeds the abstract's "F1 from X for the RAG baseline").
+- **Vanilla RAG** = the base config: **Gemma-4-E4B single-model, 1-pass** RAG (no 2-pass, no ensemble),
+  scored with the *same* entity-level metric. F1 **0.787 (PDAC) / 0.805 (BRCA)** — the floor of the
+  progression (recall-driven: PDAC R 0.661 → 0.721 anchor → 0.815 ensemble). Script:
+  `scripts/score_vanilla_rag.py` → `results/vanilla_rag_score.json`. Feeds the abstract's "F1 from X for the RAG baseline".
 
 ---
 
