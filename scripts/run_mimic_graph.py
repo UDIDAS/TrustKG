@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 os.environ.setdefault("TRUSTKG_ROOT", "/home/ud3d4/Desktop/TrustKG")
 logging.basicConfig(level=logging.WARNING, format="%(message)s")
 from src.graph.rdf_builder import build_patient_graph, build_cohort_graph, serialize_graph, run_sparql_queries
+from src.graph.schema import build_schema_graph, write_schema
 
 DELTA = 0.4
 OUT = Path("results/rdf"); OUT.mkdir(parents=True, exist_ok=True)
@@ -38,6 +39,7 @@ def count(q):
     return int(q[0].get("n", q[0].get("count", 0))) if q else 0
 
 
+write_schema(str(OUT / "schema.ttl"))   # standalone shared TBox
 report = {}
 for cohort in ["mimiciii", "mimiciv"]:
     SRC = Path(f"results/extraction/mimic_{cohort}/union")
@@ -48,6 +50,7 @@ for cohort in ["mimiciii", "mimiciv"]:
         pid = str(d.get("id") or d.get("patient") or f.stem)
         pgs[pid] = build_patient_graph(pid, d.get("triples", []), trust_threshold=DELTA)
     cg = build_cohort_graph(pgs)
+    cg += build_schema_graph()   # schema + instances: merge the TBox so each .ttl is self-contained
     serialize_graph(cg, OUT / f"mimic_{cohort}.ttl")
     q = run_sparql_queries(cg)
     q.update(run_sparql_queries(cg, COHORT_Q))
