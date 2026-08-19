@@ -3,6 +3,12 @@
 **Single source of truth for every number in the IEEE BigData 2026 draft.** Each table below
 mirrors the draft's *exact* structure (same columns, same rows). Update Overleaf from the ✅ cells.
 
+> **⛔ Direction rule (do not get this backwards):** the draft governs **structure only** (which tables
+> exist, their numbering I–VI, column/row layout). The **repo governs every number** — this file, verified
+> against the result JSONs, is authoritative. **Never edit a repo/doc number to match the draft.** The draft's
+> printed cells are *older than* our results; when they disagree, the draft is stale → update the manuscript,
+> not the repo. "Consistency with the draft" = same table shape, *newer* numbers.
+
 Legend:
 - ✅ **verified** — reproduced in this repo, frozen (seeded where stochastic); generating script named.
 - ⛔ **pending** — needs an experiment we have not run yet (named below).
