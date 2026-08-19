@@ -89,7 +89,17 @@ def _norm(s) -> str:
     return re.sub(r"\s+", " ", str(s or "").strip().lower())
 
 
-_PHI_SCRUB = re.compile(r"\[[^\]]*\]|\*\*\*\*\*+")
+_PHI_SCRUB = re.compile(
+    r"\[\*\*.*?\*\*\]"                                   # [** ... **] full MIMIC-III marker
+    r"|\[[^\]]*\]"                                       # [ ... ] any bracket pair
+    r"|\[\*\*[^\]]*"                                     # [** ...   (truncated-open remnant)
+    r"|\*\*\]"                                           # **]       (truncated-close remnant)
+    r"|\*{5,}"                                           # ***** blocks
+    r"|_{3,}"                                            # ___       (MIMIC-IV de-id)
+    r"|\b(?:known )?(?:lastname|firstname)\b[\s\d()-]*"  # de-id name remnants
+    r"|last name \(stitle\)[\s\d()-]*"
+    r"|\bhospital\d+\b",                                 # hospital1 / hospital3 de-id
+    re.IGNORECASE)
 
 
 def is_phi(text) -> bool:
@@ -145,6 +155,11 @@ def normalize_triples(triples: list[dict]) -> tuple[list[dict], Counter]:
             continue
 
         out = dict(t)
+
+        # scrub embedded de-id placeholders (MIMIC-IV '___', truncated [** **] fragments) from the
+        # entity/value labels themselves, not just evidence — so no de-id marker reaches the graph
+        e = scrub_phi(e); v = scrub_phi(v)
+        out["entity"], out["value"] = e, v
 
         # 2. vacuous entity -> recast demographic, else drop
         if is_vacuous(e):
