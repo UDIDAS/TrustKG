@@ -165,11 +165,10 @@ try:
         cov, risk = _rc(conf, yte)
         plt.plot(cov, risk, linewidth=2, label=f"{name} (AURC={aur:.3f})")
     plt.xlabel("Coverage"); plt.ylabel("Risk (error rate among admitted)")
-    plt.title("Risk–coverage — held-out CORAL test (Gemma-4 ensemble)")
+    # no in-plot title — the IEEE figure caption describes the experiment; keep only axes + legend
     plt.legend(loc="upper left"); plt.grid(alpha=0.3); plt.tight_layout()
-    # bbox_inches="tight" expands the saved canvas to include the title/labels (no cropping)
-    plt.savefig("figures/risk_coverage.pdf", bbox_inches="tight", pad_inches=0.15)
-    plt.savefig("figures/risk_coverage.png", dpi=200, bbox_inches="tight", pad_inches=0.15)
+    plt.savefig("figures/risk_coverage.pdf", bbox_inches="tight", pad_inches=0.1)
+    plt.savefig("figures/risk_coverage.png", dpi=200, bbox_inches="tight", pad_inches=0.1)
     plt.close()
     print(f"Saved figures/risk_coverage.pdf  (n_test={int(te.sum())})")
 except Exception as e:
