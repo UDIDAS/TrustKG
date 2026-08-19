@@ -38,8 +38,8 @@ y = np.array([r["correct"] for r in data], float)
 pid = np.array([r["pid"] for r in data])
 tr = np.isin(pid, list(CORAL_TRAIN)); va = np.isin(pid, list(CORAL_VAL)); te = np.isin(pid, list(CORAL_TEST))
 
-# identical fit to Table II (seeded)
-gb = GradientBoostingClassifier(max_depth=3, n_estimators=200, random_state=0).fit(X[tr | va], y[tr | va])
+# identical fit to Table II (seeded) — clean split: reliability model on TRAIN only, Platt + tau on VAL, eval on TEST
+gb = GradientBoostingClassifier(max_depth=3, n_estimators=200, random_state=0).fit(X[tr], y[tr])
 platt = LogisticRegression().fit(gb.predict_proba(X[va])[:, 1].reshape(-1, 1), y[va])
 learn_cal_te = platt.predict_proba(gb.predict_proba(X[te])[:, 1].reshape(-1, 1))[:, 1]
 dev_c_cal = platt.predict_proba(gb.predict_proba(X[va])[:, 1].reshape(-1, 1))[:, 1]

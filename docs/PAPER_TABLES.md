@@ -61,36 +61,39 @@ selective admission buys as the precision target tightens (one method, the tunab
 | Method | ECE | Brier | NLL | AURC | Cov.@95% |
 |---|---|---|---|---|---|
 | Heuristic Trust | 0.172 | 0.082 | 0.315 | 0.031 | 0.981 |
-| **Learned Reliability** | **0.008** | **0.046** | **0.181** | **0.019** | **0.992** |
-| Learned + Calibration | 0.014 | 0.048 | 0.190 | 0.019 | 0.992 |
+| **Learned Reliability** | **0.009** | **0.046** | **0.180** | **0.018** | **0.997** |
+| Learned + Calibration | 0.012 | 0.048 | 0.195 | 0.018 | 0.997 |
 
 - **No Insert/Review/Reject column here, on purpose:** at a 95%-precision bar all three admit ≈100% (the
   Gemma-4 ensemble is already ≈95% precise), so that split carries no signal. The differentiator is
-  **calibration/risk** — Learned ECE **0.008** vs Heuristic **0.172**; AURC **0.019** vs **0.031**.
+  **calibration/risk** — Learned ECE **0.009** vs Heuristic **0.172**; AURC **0.018** vs **0.031**.
 
 **Panel B — selective admission (Learned + Calibration), as the precision target rises:**
 
-| Target precision | Insert | Review | Reject | Achieved insert-precision |
-|---|---|---|---|---|
-| 95% | 100% | 0% | 0% | 0.949 |
-| 98% | 86% | 12% | 2% | 0.967 |
-| 99% | 67% | 31% | 2% | 0.981 |
+| Target precision | Insert | Review | Reject | Achieved insert-precision | τH | τL |
+|---|---|---|---|---|---|---|
+| 95% | 100% | 0% | 0% | 0.949 | 0.325 | 0.358 |
+| 98% | 81% | 19% | 0% | 0.969 | 0.954 | 0.358 |
+| 99% | 56% | 44% | 0% | 0.984 | 0.962 | 0.358 |
 
 - **One method, one dial:** stricter target → fewer auto-inserts, more routed to review. The Insert/Review/Reject
-  split comes from thresholding *this method's* calibrated scores on dev to hit each target (disjoint bands, sum 100%).
+  split comes from thresholding *this method's* calibrated scores on **VAL** to hit each target (disjoint bands, sum 100%):
+  Insert if reliability ≥ τH, Reject if < τL and not inserted, else Review. τL is constant (the reject band = dev
+  precision ≤ 0.5); τH rises with the target. Thresholds are on the calibrated reliability-probability scale [0,1].
 - **⚠️ The 67/31/2 is this method at the 99% target — do NOT place it beside the Heuristic's 100/0/0 as if they
   share one threshold.** Every method sits at 100/0/0 at the 95% bar (Panel A's setting).
 
 **What Panel B lets us conclude (RQ3):**
-1. **The gate is controllable** — tightening the target 95→99% raises realized insert-precision 0.949→0.967→0.981
-   while auto-insert coverage falls 100→86→67%. The knob does what it promises: you *buy* precision with coverage.
-2. **The requested precision is approximately delivered** (0.981 at a 99% target) — evidence that the calibrated
+1. **The gate is controllable** — tightening the target 95→99% raises realized insert-precision 0.949→0.969→0.984
+   while auto-insert coverage falls 100→81→56%. The knob does what it promises: you *buy* precision with coverage.
+2. **The requested precision is approximately delivered** (0.984 at a 99% target) — evidence that the calibrated
    per-fact score turns into an (approximate) set-level precision guarantee without checking facts by hand.
-   *(Honest: 0.981 ≈ but not exactly 0.99 — a small dev→test gap; a controllable trade, not a hard guarantee.)*
-3. **It quantifies the cost of high precision:** reaching ≈98% insert-precision costs ≈31% of facts routed to
-   human review and ≈2% rejected — a predictable review budget an operator can plan around.
-4. **The review burden stays bounded/practical** — even at the strictest bar most facts are auto-handled; the
-   human is a light backstop (≈⅓ to review, ≈2% rejected), not doing the bulk of the work.
+   *(Honest: 0.984 ≈ but not exactly 0.99 — a small dev→test gap; a controllable trade, not a hard guarantee.)*
+3. **It quantifies the cost of high precision:** reaching ≈98% insert-precision costs ≈44% of facts routed to
+   human review and ≈0% rejected — a predictable review budget an operator can plan around.
+4. **The review burden stays bounded** — at the strictest 99% bar a majority (56%) still auto-insert while ≈44%
+   route to review and ≈0% are rejected; at the 98% bar it is lighter (81% auto-insert, 19% review). The human
+   adjudicates a bounded, flagged minority-to-plurality, not the bulk of extraction.
 - This is *not* the method comparison (that's the threshold-free ECE/AURC in Panel A); it's the tunable-policy
   illustration. We do **not** commit to a single target — an operator picks the point for their use case.
 
@@ -105,18 +108,21 @@ Two distinct gates operate on the KG — do not conflate them:
 | KG (held-out test) | Triples | Precision (vs gold) |
 |---|---|---|
 | All candidates (construction-gated) | 3,053 | 0.949 |
-| **Selective-admitted (learned @ 99% target)** | **2,050** | **0.981** (+0.032) |
+| **Selective-admitted (learned @ 99% target)** | **1,708** | **0.984** (+0.036) |
 
-- Held back = 1,003 triples (947 review / 56 reject); **118 are genuinely wrong**. The held-back set is what
+- Held back = 1,345 triples (1,344 review / 1 reject); **130 are genuinely wrong**. The held-back set is what
   a threshold-free / rule-based method keeps — e.g. **bogus entity→code assignments** (`Female`, `Diagnosis`,
   `Noted` → SNOMED `254837009` = breast cancer) and **null/malformed triples** (`R2109 --mutation--> None`).
-- **Honest magnitude:** the precision lift is real but **modest (+0.032)** — the base extractor is already
+- **Honest magnitude:** the precision lift is real but **modest (+0.036)** — the base extractor is already
   ≈95% precise, so there is little entity-level error to remove. The gate's value is a *cleaner KG at a chosen
   bar* + a visible review/reject queue, not a large cleanup.
 
 - Verified on the Gemma-4 `coral_final` ensemble (`results/e1e3_results.json`, seeded `random_state=0`,
   reproducible via `scripts/exp_calibration_selective.py`; default `TRUSTKG_UNION_DIR=coral_final` — the *reported*
   extractor. The old default pointed at `ens3` and produced different numbers).
+- **Clean split (no leakage):** the learned reliability model is fit on **TRAIN only (24 patients)**; Platt
+  calibration **and** τH/τL selection use **VAL only (8 patients)**; all metrics are on **TEST only (8 patients,
+  3,053 triples)**. VAL is held out from the reliability model, so its calibration/thresholds are out-of-sample.
 - Held-out **test set: 3,053 triples** (of 17,597 labeled); overall correct-rate **0.952**.
   **⚠️ The draft caption's "3,569 eligible candidates / correct-rate 0.872" are the OLD ens3 numbers — update
   to 3,053 / 0.952 (Gemma-4).**
@@ -244,8 +250,8 @@ The draft prose blanks unverified numbers with `[GATED]`. Fillable now vs. block
 | … to `[GATED]` on CORAL-BRCA | 0.890 (Ensemble, Gemma-4 sub-5B) | ✅ |
 | achieves `[GATED]` on CORAL-PDAC | 0.879 (Ensemble, Gemma-4 sub-5B) | ✅ |
 | mean F1 `XX±XX` BRCA / PDAC (robustness) | 0.890±0.044 / 0.879±0.048 (Ensemble) | ✅ |
-| inserts `[GATED]` / routes `[GATED]` / rejects `[GATED]` | 67% / 31% / 2% @99% target (or 100/0/2 @95%) | ✅ |
-| … AURC is `[GATED]` | 0.019 (learned) | ✅ |
+| inserts `[GATED]` / routes `[GATED]` / rejects `[GATED]` | 56% / 44% / 0% @99% target (or 100/0/0 @95%) | ✅ |
+| … AURC is `[GATED]` | 0.018 (learned) | ✅ |
 | across 840 records: `[GATED]` triples / `[GATED]` entities | CORAL 17,597 + MIMIC 318,081 union triples; CORAL KG 5,117 entities | ✅ (MIMIC done) |
 | `[GATED FIGURE: RISK–COVERAGE]` (Fig. 2) | data ready (E1–E2); PNG not rendered | can generate on request |
 | "no credential-gated MIMIC … content" (ethics) | *not a placeholder — ordinary word, leave as-is* | n/a |

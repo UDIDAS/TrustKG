@@ -67,10 +67,13 @@ pid = np.array([r["pid"] for r in data])
 tr = np.isin(pid, list(CORAL_TRAIN)); va = np.isin(pid, list(CORAL_VAL)); te = np.isin(pid, list(CORAL_TEST))
 print(f"triples {len(data)} | correct-rate {y.mean():.3f} | train {tr.sum()} val {va.sum()} test {te.sum()}")
 
-# ── learned reliability: gradient boosting on features, Platt on val ──
+# ── learned reliability: gradient boosting on features ──
+# Clean split (no leakage): reliability model fit on TRAIN only; Platt calibration + tau_H/tau_L
+# selection on VAL only; final metrics on TEST only. VAL is held out from the reliability model,
+# so its Platt calibration and threshold selection are genuinely out-of-sample.
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
-gb = GradientBoostingClassifier(max_depth=3, n_estimators=200, random_state=0).fit(X[tr | va], y[tr | va])
+gb = GradientBoostingClassifier(max_depth=3, n_estimators=200, random_state=0).fit(X[tr], y[tr])
 learn_te = gb.predict_proba(X[te])[:, 1]
 platt = LogisticRegression().fit(gb.predict_proba(X[va])[:, 1].reshape(-1, 1), y[va])
 learn_cal_te = platt.predict_proba(learn_te.reshape(-1, 1))[:, 1]
@@ -102,7 +105,7 @@ def bands(dev_c, dev_y, te_c, te_y, hi=0.95, lo=0.5):
     idl = np.where(pl <= lo)[0]; tlo = ps2[idl[-1]] if len(idl) else -0.01
     ins = te_c >= thi; rej = (te_c < tlo) & ~ins; rev = ~ins & ~rej   # disjoint: ins+rev+rej = 1
     ip = te_y[ins].mean() if ins.sum() else float("nan")
-    return ins.mean(), rev.mean(), rej.mean(), ip
+    return ins.mean(), rev.mean(), rej.mean(), ip, float(thi), float(tlo)
 
 
 print("\nTABLE VIII — Reliability estimation & calibration (held-out TEST; lower better)")
@@ -117,7 +120,7 @@ for name, dev_c, dev_y, te_c in [
         ("Heuristic Trust", platt_h.predict_proba(trust[va].reshape(-1, 1))[:, 1], y[va], trust_cal_te),
         ("Learned Reliability", gb.predict_proba(X[va])[:, 1], y[va], learn_te),
         ("Calibrated Selective", dev_c_cal, y[va], learn_cal_te)]:
-    i, r, j, ip = bands(dev_c, dev_y, te_c, yte)
+    i, r, j, ip, _, _ = bands(dev_c, dev_y, te_c, yte)
     print(f"  {name:24s} {aurc(te_c,yte):>6.3f} {cov95(te_c,yte):>7.3f} | {i*100:>6.1f}% {r*100:>6.1f}% {j*100:>6.1f}% {ip:>7.3f}")
 
 # Operating-point curve: as the target precision rises, the gate routes/rejects more (the tunable tradeoff)
@@ -125,12 +128,18 @@ print("\n  Operating-point curve (Calibrated Selective) — Insert/Review/Reject
 print(f"    {'target':>7s} | {'Insert':>7s} {'Review':>7s} {'Reject':>7s} {'InsPrec':>8s}")
 curve = {}
 for tgt in [0.95, 0.98, 0.99]:
-    i, r, j, ip = bands(dev_c_cal, y[va], learn_cal_te, yte, hi=tgt)
+    i, r, j, ip, thi, tlo = bands(dev_c_cal, y[va], learn_cal_te, yte, hi=tgt)
     curve[f"{tgt:.2f}"] = {"insert": round(float(i), 4), "review": round(float(r), 4),
-                           "reject": round(float(j), 4), "ins_prec": round(float(ip), 4)}
-    print(f"    {tgt:>7.2f} | {i*100:>6.1f}% {r*100:>6.1f}% {j*100:>6.1f}% {ip:>8.3f}")
+                           "reject": round(float(j), 4), "ins_prec": round(float(ip), 4),
+                           "tau_H": round(thi, 4), "tau_L": round(tlo, 4)}
+    print(f"    {tgt:>7.2f} | {i*100:>6.1f}% {r*100:>6.1f}% {j*100:>6.1f}% {ip:>8.3f}"
+          f"   (tau_H={thi:.4f} tau_L={tlo:.4f})")
 
 json.dump({"n": len(data), "correct_rate": float(y.mean()), "test_n": int(te.sum()),
+           "split": {"reliability_fit": "TRAIN only (24 patients)",
+                     "calibration_and_tau_selection": "VAL only (8 patients)",
+                     "evaluation": "TEST only (8 patients)",
+                     "train_triples": int(tr.sum()), "val_triples": int(va.sum()), "test_triples": int(te.sum())},
            "viii": {"heuristic_ece": ece(trust[te], yte), "learned_ece": ece(learn_te, yte),
                     "learned_platt_ece": ece(learn_cal_te, yte)},
            "ix": {"aurc_heuristic": aurc(trust_cal_te, yte), "aurc_learned": aurc(learn_te, yte),
