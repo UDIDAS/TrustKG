@@ -222,16 +222,16 @@ Columns: `Corpus | Triples | Throughput | Verify Lat. | Cost`.
 
 | Corpus | Triples | Throughput (notes/hr) | Verify Lat. (ms/triple) | Cost (GPU-h) |
 |---|---|---|---|---|
-| 25% (200 notes) | **73,858** | **130** | **43.8** | **3.1** |
-| 50% (400 notes) | **153,911** | **130** | **43.8** | **6.2** |
-| 75% (600 notes) | **237,479** | **130** | **43.8** | **9.2** |
-| 100% (800 notes) | **318,081** | **130** | **43.8** | **12.3** |
+| 25% (200 notes) | **73,858** | **130** | **44.3** | **3.1** |
+| 50% (400 notes) | **153,911** | **130** | **44.3** | **6.2** |
+| 75% (600 notes) | **237,479** | **130** | **44.3** | **9.2** |
+| 100% (800 notes) | **318,081** | **130** | **44.3** | **12.3** |
 
 - ✅ **DONE** (full 800-note MIMIC oncology corpus). Scalability is **linear**: triples grow ∝ corpus,
   throughput flat (no degradation), per-triple verification latency constant, cost linear.
 - Script: `scripts/table6_scalability.py` → `results/table6_scalability.json`.
 - **Provenance (honest):** *Triples* = measured (ensemble union, pooled from the complete bymodel caches).
-  *Verification latency* = measured fresh here (5-layer validation; 17.3 s/note ≈ 43.8 ms/triple — the O(n²)
+  *Verification latency* = measured fresh here (5-layer validation; 17.5 s/note ≈ 44.3 ms/triple — the O(n²)
   contradiction layer dominates). *Throughput* = the measured vLLM ensemble rate from the run (gemma-4
   2-pass 173.7/160.2 notes/hr + 1-pass augmenters ≈320 → 65 notes/hr·GPU, 130 on 2 GPUs). *Cost* = derived
   GPU-hours. **Not a single instrumented run** — if a one-pass instrumented table is wanted, a clean vLLM
