@@ -181,7 +181,7 @@ Qwen3-4B, MedGemma-4B), entity-level vs gold (exact scorer):
 
 Both cohorts' F1 **match/beat the prior Gemma-3 + Qwen-8B ensemble** (0.877 / 0.868) at **precision ≈0.95** and
 half the parameter budget — the all-≤5B constraint cost nothing. The 2-pass anchor lifts ensemble recall from
-≈0.73 (1-pass) to **0.83**. → Table **II**.
+≈0.73 (1-pass) to **0.83**. → Table **III**.
 
 **Stage 2 — Validation** · **construction gate** (admit if `trust ≥ δ=0.4` ∧ source-grounded): admits **98.99%**
 of candidate triples across all 840 records — prunes only ungrounded/degenerate ones; every admitted triple is
@@ -203,6 +203,17 @@ Table II are a separate, tunable *downstream* reliability policy, not a KG prune
 | SPARQL queries executed | **10/10** | **10/10** |
 
 This closes the loop **unstructured notes → validated triples → queryable RDF/SPARQL** (the Value V).
+
+**Full KG scale (Table V — all 840 records, trust-admitted).** The same construction gate
+(`trust ≥ 0.4 ∧ grounded`) materializes all four cohorts: CORAL-PDAC 34,551 / CORAL-BRCA 34,276 /
+**MIMIC-III 503,724** (26,159 entities · 152,433 admitted triples) / **MIMIC-IV 520,644** (27,724 · 162,271).
+**Total: 1,093,195 RDF triples · 58,995 entities**, from **332,284 / 335,678 admitted candidates (98.99%)**;
+all 4 subsets pass 10/10 SPARQL.
+
+**Construction-time validation (Table IV).** Mean per-triple validator score per layer over all 17,597 CORAL
+ensemble triples (graded 0–1, *not* pass/fail): source grounding **0.967**, ontology compatibility **0.564**,
+schema validity **0.539**, temporal consistency **0.787**, contradiction control **0.893**. Source grounding is
+the strong signal; the moderate ontology/schema scores motivate deeper terminology grounding. → Table IV.
 
 **Example queries on the CORAL graph:**
 
@@ -269,7 +280,7 @@ riskiest facts** — the tunable quality–coverage tradeoff:
 
 | Target precision | Insert | Review | Reject | Achieved precision |
 |---|---|---|---|---|
-| 95% | 100% | 0% | 2% | 0.949 |
+| 95% | 100% | 0% | 0% | 0.949 |
 | 98% | 86% | 12% | 2% | 0.967 |
 | **99%** | **67%** | **31%** | **2%** | **0.981** |
 
@@ -303,7 +314,7 @@ alter the extractor the paper evaluates), we run the **identical ensemble** on a
 tractable with **vLLM**: generation is offloaded to a resident vLLM server (continuous batching +
 PagedAttention) while NER / retrieval / validation stay in-process, so **the output is unchanged**. Measured
 end-to-end this is **≈6–10× the HF runner** (≈68 notes/hr·GPU for the 2-pass anchor at batch scale; 1-pass
-augmenters ≈2× faster) — a multi-day run in **≈15–18 h on 2× A6000**, cohort-split (one GPU per cohort),
+augmenters ≈2× faster) — the full 800-note run **completed in ≈15–18 h on 2× A6000**, cohort-split (one GPU per cohort),
 per-note checkpointed and reboot-resilient (`scripts/mimic_vllm_cohort.sh` + `scripts/mimic_resume.sh`;
 env recipe in `scripts/vllm_env.sh`). A **seed gate** (first ≈100 notes: triples/note, source-grounding,
 FHIR mix) confirms MIMIC quality before the full corpus commits. The run is instrumented at 25/50/75/100%
@@ -334,11 +345,12 @@ Two headline claims fall straight out of this:
 - **Trust → precision.** The models span a wide faithfulness range — the anchor grounds ≈95%+, while
   Llama-3.2-3B (smallest, 3B) grounds only ≈57%. The framework does **not** blindly union: the veracity
   layer scores grounding and routes the ungrounded triples to Review/Reject instead of auto-Insert. This is
-  the concrete motivation for the trust gate. *(Per-model Insert-tier survival rate — direct proof the gate
-  filters the weak augmenter — is added when the union completes.)*
+  the concrete motivation for the trust gate. *(The gate's discarded-triple evidence is now materialized —
+  `scripts/trust_admission_demo.py` surfaces the rejected/reviewed triples the gate holds back; see the Table II
+  KG panel in [docs/PAPER_TABLES.md](docs/PAPER_TABLES.md).)*
 
-*(Numbers from the in-progress vLLM run; Gemma-4 is complete on both cohorts, the augmenters finalize with
-the full 800 notes. Every model is 0-empty after the Qwen3 thinking-mode fix.)*
+*(Numbers from the completed vLLM run — all 4 models on all 800 notes; every model is 0-empty after the
+Qwen3 thinking-mode fix.)*
 
 ### Extraction failure modes & how they're handled
 
@@ -366,19 +378,16 @@ confidently *rejecting* it (vs demoting) is the case that motivates real termino
 
 ## Status
 
-**Done**
-- Extractor selected by full extractor-comparison sweep: **Gemma-4-E4B 2-pass anchor + Llama-3.2-3B / Qwen3-4B / MedGemma-4B** (all ≤5B); F1 0.879 / 0.890.
+**Done** — all 6 draft tables filled with real numbers ([docs/PAPER_TABLES.md](docs/PAPER_TABLES.md)).
+- Extractor selected by full extractor-comparison sweep: **Gemma-4-E4B 2-pass anchor + Llama-3.2-3B / Qwen3-4B / MedGemma-4B** (all ≤5B); F1 0.879 / 0.890, with the Vanilla-RAG floor 0.787 / 0.805 → Table III.
 - Full 40-patient CORAL run, per cohort → Table III.
-- CORAL end-to-end: RDF materialization + SPARQL cohort queries, per cohort → Table V.
+- Construction-time validation, 5-layer mean scores (17,597 triples) → Table IV.
+- End-to-end KG materialization + SPARQL, **all 4 cohorts, trust-admitted** (98.99% admission; 1,093,195 RDF triples / 58,995 entities) → Table V.
 - Veracity: on the Gemma-4 ensemble — learned reliability near-perfectly calibrated (ECE 0.008 vs 0.172); tunable admission gate (95%→auto-insert all, 99%→route 31% to review at 98% precision) → Table II.
-- MIMIC-III / MIMIC-IV oncology cohorts curated (400 + 400 notes).
-
-**In progress**
-- MIMIC scale-up = **full 4-model ensemble union via vLLM** (running, ≈15–18 h on 2× A6000; seed gate passed at 92% source-grounding) → Table VI.
+- MIMIC-III / MIMIC-IV: **full 4-model ensemble union via vLLM on all 800 notes** (seed gate passed at 92% source-grounding); scalability instrumented at 25/50/75/100% corpus fractions → Table VI.
 
 **Next**
-- Vanilla-RAG baseline row (Table III) + validation-dimension (Table IV) aggregation.
-- Extend calibration + selective admission to MIMIC. (Distillation → future work.)
+- Extend calibration + selective admission to MIMIC (needs gold labels). Distillation → future work.
 
 ---
 
