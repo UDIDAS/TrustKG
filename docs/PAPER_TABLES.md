@@ -204,10 +204,10 @@ source-grounded (the construction gate), then materialized with its trust score 
 
 | Dataset | Admitted / Cand. (rate) | RDF Triples | Entities | Query Success | Status |
 |---|---|---|---|---|---|
-| CORAL-PDAC | 8,741 / 8,747 (99.93%) | 34,551 | 2,549 | 10/10 | ✅ (Gemma-4, trust-admitted, schema+instances) |
-| CORAL-BRCA | 8,839 / 8,850 (99.88%) | 34,276 | 2,563 | 10/10 | ✅ (Gemma-4, trust-admitted, schema+instances) |
-| MIMIC-III | 152,433 / 153,911 (99.04%) | 503,724 | 26,159 | 10/10 | ✅ (Gemma-4, trust-admitted, schema+instances) |
-| MIMIC-IV | 162,271 / 164,170 (98.84%) | 520,644 | 27,724 | 10/10 | ✅ (Gemma-4, trust-admitted, schema+instances) |
+| CORAL-PDAC | 8,741 / 8,747 (99.93%) | 34,550 | 2,549 | 10/10 | ✅ (Gemma-4, trust-admitted, schema+instances) |
+| CORAL-BRCA | 8,839 / 8,850 (99.88%) | 34,275 | 2,563 | 10/10 | ✅ (Gemma-4, trust-admitted, schema+instances) |
+| MIMIC-III | 152,433 / 153,911 (99.04%) | 503,704 | 26,160 | 10/10 | ✅ (Gemma-4, trust-admitted, schema+instances) |
+| MIMIC-IV | 162,271 / 164,170 (98.84%) | 521,350 | 27,903 | 10/10 | ✅ (Gemma-4, trust-admitted, schema+instances) |
 
 - Source: `results/coral_graph_report.json` / `results/mimic_graph_report.json`
   (`scripts/run_coral_graph.py`, `scripts/run_mimic_graph.py`). Current Gemma-4 sub-5B ensemble, **trust-admitted
@@ -216,8 +216,8 @@ source-grounded (the construction gate), then materialized with its trust score 
 - **Construction-gate admission = 332,284 / 335,678 candidate triples (98.99%)** — removes only ungrounded /
   degenerate triples. This is the KG's admission policy; it is **independent of** the 95/98/99% selective-admission
   operating points in Table II (those are a downstream reliability *policy* on held-out triples, not a KG prune).
-- **Across all 840 records** (40 CORAL + 800 MIMIC): **1,093,195 RDF triples**, **58,995 KG entities**
-  (CORAL 68,827 / 5,112 + MIMIC 1,024,368 / 53,883). RDF count exceeds the raw-union pass-through because each
+- **Across all 840 records** (40 CORAL + 800 MIMIC): **1,093,879 RDF triples**, **59,175 KG entities**
+  (CORAL 68,825 / 5,112 + MIMIC 1,025,054 / 54,063). RDF count exceeds the raw-union pass-through because each
   admitted triple now serializes its trust score + 5-layer provenance.
 
 ---

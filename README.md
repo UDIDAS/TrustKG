@@ -193,7 +193,7 @@ Table II are a separate, tunable *downstream* reliability policy, not a KG prune
 | | CORAL-PDAC | CORAL-BRCA |
 |---|---:|---:|
 | admitted / candidate triples | 8,741 / 8,747 | 8,839 / 8,850 |
-| RDF triples | 34,551 | 34,276 |
+| RDF triples | 34,550 | 34,275 |
 | KG entities | 2,549 | 2,563 |
 | ontology-linked | 156 | 194 |
 | conditions / medications / procedures | 1258 / 514 / 885 | 1614 / 271 / 1055 |
@@ -205,9 +205,9 @@ Table II are a separate, tunable *downstream* reliability policy, not a KG prune
 This closes the loop **unstructured notes → validated triples → queryable RDF/SPARQL** (the Value V).
 
 **Full KG scale (Table V — all 840 records, trust-admitted).** The same construction gate
-(`trust ≥ 0.4 ∧ grounded`) materializes all four cohorts: CORAL-PDAC 34,551 / CORAL-BRCA 34,276 /
-**MIMIC-III 503,724** (26,159 entities · 152,433 admitted triples) / **MIMIC-IV 520,644** (27,724 · 162,271).
-**Total: 1,093,195 RDF triples · 58,995 entities**, from **332,284 / 335,678 admitted candidates (98.99%)**;
+(`trust ≥ 0.4 ∧ grounded`) materializes all four cohorts: CORAL-PDAC 34,550 / CORAL-BRCA 34,275 /
+**MIMIC-III 503,704** (26,160 entities · 152,433 admitted triples) / **MIMIC-IV 521,350** (27,903 · 162,271).
+**Total: 1,093,879 RDF triples · 59,175 entities**, from **332,284 / 335,678 admitted candidates (98.99%)**;
 all 4 subsets pass 10/10 SPARQL.
 
 **Construction-time validation (Table IV).** Mean per-triple validator score per layer over all 17,597 CORAL
@@ -383,7 +383,7 @@ confidently *rejecting* it (vs demoting) is the case that motivates real termino
 - Extractor selected by full extractor-comparison sweep: **Gemma-4-E4B 2-pass anchor + Llama-3.2-3B / Qwen3-4B / MedGemma-4B** (all ≤5B); F1 0.879 / 0.890, with the Vanilla-RAG floor 0.787 / 0.805 → Table III.
 - Full 40-patient CORAL run, per cohort → Table III.
 - Construction-time validation, 5-layer mean scores (17,597 triples) → Table IV.
-- End-to-end KG materialization + SPARQL, **all 4 cohorts, trust-admitted** (98.99% admission; 1,093,195 RDF triples / 58,995 entities) → Table V.
+- End-to-end KG materialization + SPARQL, **all 4 cohorts, trust-admitted** (98.99% admission; 1,093,879 RDF triples / 59,175 entities) → Table V.
 - Veracity: on the Gemma-4 ensemble — learned reliability near-perfectly calibrated (ECE 0.009 vs 0.172), clean TRAIN→VAL→TEST split; tunable admission gate (95%→auto-insert all, 99%→route 44% to review at 98.4% precision) → Table II.
 - MIMIC-III / MIMIC-IV: **full 4-model ensemble union via vLLM on all 800 notes** (seed gate passed at 92% source-grounding); scalability instrumented at 25/50/75/100% corpus fractions → Table VI.
 
