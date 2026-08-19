@@ -97,18 +97,22 @@ selective admission buys as the precision target tightens (one method, the tunab
 **Gate applied to the materialized KG (makes admission visible in the *product*, not just a table —
 `scripts/trust_admission_demo.py`, held-out CORAL):**
 
-| KG | Triples | Precision (vs gold) |
+Two distinct gates operate on the KG — do not conflate them:
+1. **Construction gate** (`trust ≥ δ=0.4 ∧ grounded`) — what the *released* KG uses (Table V); admits **98.99%**,
+   removing only ungrounded/degenerate triples.
+2. **Selective-admission policy** (learned model @ a precision target) — the tunable *downstream* knob shown here.
+
+| KG (held-out test) | Triples | Precision (vs gold) |
 |---|---|---|
-| Union (pass-through, current default) | 3,053 | 0.949 |
-| **Trust-admitted (learned @ 99% target)** | **2,050** | **0.981** (+0.032) |
+| All candidates (construction-gated) | 3,053 | 0.949 |
+| **Selective-admitted (learned @ 99% target)** | **2,050** | **0.981** (+0.032) |
 
 - Held back = 1,003 triples (947 review / 56 reject); **118 are genuinely wrong**. The held-back set is what
   a threshold-free / rule-based method keeps — e.g. **bogus entity→code assignments** (`Female`, `Diagnosis`,
   `Noted` → SNOMED `254837009` = breast cancer) and **null/malformed triples** (`R2109 --mutation--> None`).
 - **Honest magnitude:** the precision lift is real but **modest (+0.032)** — the base extractor is already
   ≈95% precise, so there is little entity-level error to remove. The gate's value is a *cleaner KG at a chosen
-  bar* + a visible review/reject queue, not a large cleanup. (The materialized KG is currently the Union
-  pass-through; applying the gate is a build-flag away — the scores just need threading into the union.)
+  bar* + a visible review/reject queue, not a large cleanup.
 
 - Verified on the Gemma-4 `coral_final` ensemble (`results/e1e3_results.json`, seeded `random_state=0`,
   reproducible via `scripts/exp_calibration_selective.py`; default `TRUSTKG_UNION_DIR=coral_final` — the *reported*
@@ -182,21 +186,27 @@ concept / 0.7 valid-FHIR-type / 0.3 otherwise (Layer 2); *schema validity* = att
 
 ## Table V — KG construction scale & structured queryability ✅ COMPLETE
 
-Columns: `Dataset | KG Triples | Entities | Query Success` — reported per cohort/subset.
+Columns: `Dataset | Admitted / Candidate triples | RDF Triples | Entities | Query Success` — per cohort/subset.
+The KG is **trust-admitted**: each candidate triple is validated and admitted only if `trust ≥ δ (0.4)` **and**
+source-grounded (the construction gate), then materialized with its trust score + layer provenance.
 
-| Dataset | KG Triples | Entities | Query Success | Status |
-|---|---|---|---|---|
-| CORAL-PDAC | 31,652 | 2,549 | 10/10 | ✅ (Gemma-4, normalized, schema+instances) |
-| CORAL-BRCA | 31,314 | 2,568 | 10/10 | ✅ (Gemma-4, normalized, schema+instances) |
-| MIMIC-III | 460,821 | 26,186 | 10/10 | ✅ (Gemma-4, normalized, schema+instances) |
-| MIMIC-IV | 480,041 | 27,740 | 10/10 | ✅ (Gemma-4, normalized, schema+instances) |
+| Dataset | Admitted / Cand. (rate) | RDF Triples | Entities | Query Success | Status |
+|---|---|---|---|---|---|
+| CORAL-PDAC | 8,741 / 8,747 (99.93%) | 34,551 | 2,549 | 10/10 | ✅ (Gemma-4, trust-admitted, schema+instances) |
+| CORAL-BRCA | 8,839 / 8,850 (99.88%) | 34,276 | 2,563 | 10/10 | ✅ (Gemma-4, trust-admitted, schema+instances) |
+| MIMIC-III | 152,433 / 153,911 (99.04%) | 503,724 | 26,159 | 10/10 | ✅ (Gemma-4, trust-admitted, schema+instances) |
+| MIMIC-IV | 162,271 / 164,170 (98.84%) | 520,644 | 27,724 | 10/10 | ✅ (Gemma-4, trust-admitted, schema+instances) |
 
 - Source: `results/coral_graph_report.json` / `results/mimic_graph_report.json`
-  (`scripts/run_coral_graph.py`, `scripts/run_mimic_graph.py`). Current Gemma-4 sub-5B ensemble after
-  normalization (fhir-type canonicalized, PHI scrubbed, degenerate collapsed) + shared schema (TBox) merged
-  into each `.ttl`. All 4 subsets pass 10/10 SPARQL.
-- **Across all 840 records** (40 CORAL + 800 MIMIC): **1,003,828 RDF triples**, **59,043 KG entities**
-  (CORAL 62,966 / 5,117 + MIMIC 940,862 / 53,926).
+  (`scripts/run_coral_graph.py`, `scripts/run_mimic_graph.py`). Current Gemma-4 sub-5B ensemble, **trust-admitted
+  at the construction gate** (validate → gate `trust ≥ 0.4 ∧ grounded` → normalize → materialize with trust
+  provenance) + shared schema (TBox) merged into each `.ttl`. All 4 subsets pass 10/10 SPARQL.
+- **Construction-gate admission = 332,284 / 335,678 candidate triples (98.99%)** — removes only ungrounded /
+  degenerate triples. This is the KG's admission policy; it is **independent of** the 95/98/99% selective-admission
+  operating points in Table II (those are a downstream reliability *policy* on held-out triples, not a KG prune).
+- **Across all 840 records** (40 CORAL + 800 MIMIC): **1,093,195 RDF triples**, **58,995 KG entities**
+  (CORAL 68,827 / 5,112 + MIMIC 1,024,368 / 53,883). RDF count exceeds the raw-union pass-through because each
+  admitted triple now serializes its trust score + 5-layer provenance.
 
 ---
 

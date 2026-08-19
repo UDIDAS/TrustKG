@@ -183,19 +183,23 @@ Both cohorts' F1 **match/beat the prior Gemma-3 + Qwen-8B ensemble** (0.877 / 0.
 half the parameter budget — the all-≤5B constraint cost nothing. The 2-pass anchor lifts ensemble recall from
 ≈0.73 (1-pass) to **0.83**. → Table **II**.
 
-**Stage 2 — Validation** · trust-filter (δ=0.4): a **no-op** here (nothing pruned → precision held).
+**Stage 2 — Validation** · **construction gate** (admit if `trust ≥ δ=0.4` ∧ source-grounded): admits **98.99%**
+of candidate triples across all 840 records — prunes only ungrounded/degenerate ones; every admitted triple is
+materialized with its trust score + 5-layer provenance. (The 95/98/99% selective-admission operating points in
+Table II are a separate, tunable *downstream* reliability policy, not a KG prune.)
 
 **Stage 3–4 — RDF materialization (schema + instances) + SPARQL cohort queries** (all queries execute) → Table **V**:
 
 | | CORAL-PDAC | CORAL-BRCA |
 |---|---:|---:|
-| RDF triples | 31,652 | 31,314 |
-| KG entities | 2,549 | 2,568 |
-| ontology-linked | 156 | 196 |
-| conditions / medications / procedures | 1259 / 514 / 886 | 1617 / 273 / 1056 |
-| temporal facts | 4,759 | 4,374 |
+| admitted / candidate triples | 8,741 / 8,747 | 8,839 / 8,850 |
+| RDF triples | 34,551 | 34,276 |
+| KG entities | 2,549 | 2,563 |
+| ontology-linked | 156 | 194 |
+| conditions / medications / procedures | 1258 / 514 / 885 | 1614 / 271 / 1055 |
+| temporal facts | 4,758 | 4,374 |
 | cancer cohort (SPARQL) | 20/20 | 20/20 |
-| chemotherapy cohort (SPARQL) | 17/20 | 13/20 |
+| chemotherapy cohort (SPARQL) | 17/20 | 14/20 |
 | SPARQL queries executed | **10/10** | **10/10** |
 
 This closes the loop **unstructured notes → validated triples → queryable RDF/SPARQL** (the Value V).
