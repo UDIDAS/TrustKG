@@ -219,6 +219,11 @@ source-grounded (the construction gate), then materialized with its trust score 
 - **Across all 840 records** (40 CORAL + 800 MIMIC): **1,093,879 RDF triples**, **59,175 KG entities**
   (CORAL 68,825 / 5,112 + MIMIC 1,025,054 / 54,063). RDF count exceeds the raw-union pass-through because each
   admitted triple now serializes its trust score + 5-layer provenance.
+- **De-identification:** normalization scrubs every de-id placeholder from the materialized graph — entity/value
+  labels *and* evidence/temporal spans — covering MIMIC-III `[** **]`, MIMIC-IV `___`, `Known lastname`/`hospitalN`
+  and truncated `[**`/`**]` fragments → `REDACTED`. The released `.ttl` graphs carry **0 de-id markers** (verified
+  per cohort). This scrub is text-only, so it does not change admission counts (it slightly shifted the earlier
+  MIMIC-IV totals as cleaned labels re-dedup: 520,644→521,350 RDF, 27,724→27,903 entities).
 
 ---
 

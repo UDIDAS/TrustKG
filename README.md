@@ -128,8 +128,10 @@ instance dump. Steps from extracted triples to queryable KG:
 2. **Trust admission** — 5-layer validation → calibrated trust `T(τ)`; retain `T ≥ δ` (or route
    Insert / Review / Reject at the chosen operating point).
 3. **Normalization** (`src/graph/triple_normalizer.py`) — canonicalize `fhir_type` → a real FHIR resource;
-   drop PHI / vacuous / administrative triples; collapse degenerate (`entity==value`); scrub de-id
-   placeholders from evidence/temporal spans; dedup by canonical key.
+   drop PHI / vacuous / administrative triples; collapse degenerate (`entity==value`); **scrub
+   de-identification placeholders from every text field** — entity/value labels *and* evidence/temporal
+   spans — covering MIMIC-III `[** … **]`, MIMIC-IV `___`, and `Known lastname` / `hospitalN` remnants
+   (including truncated `[**` / `**]` fragments), replaced with `REDACTED`; dedup by canonical key.
 4. **Schema / TBox** (`src/graph/schema.py`) — a type-level ontology: FHIR-aligned `owl:Class` hierarchy
    (`fhir:Condition` / `Observation` / `Procedure` / … ⊑ `trustkg:ClinicalEntity`) + provenance/trust
    predicates (`hasEntity`, `hasValue`, `temporalAnchor`, `evidenceSpan`, `trustScore`, `consensusLevel`,
@@ -142,7 +144,9 @@ instance dump. Steps from extracted triples to queryable KG:
 7. **Query** — SPARQL cohort / temporal / multi-hop queries validate the graph.
 
 Result: a schema-conformant, FHIR-aligned, PHI-clean KG, loadable in any triple store / Protégé with the
-TBox present for reasoning.
+TBox present for reasoning. **De-identification holds end-to-end:** the input notes are already
+de-identified per PhysioNet, and normalization additionally scrubs every de-id placeholder from the graph
+(step 3), so the materialized KG contains **zero de-id markers** — verified across all four cohorts.
 
 ---
 
@@ -399,3 +403,11 @@ subset here is **oncology-filtered** to align with CORAL. **No patient data, ext
 executed-notebook outputs are committed** — `data/`, `results/`, and executed notebooks are git-ignored.
 Obtain the datasets under your own credentials. TRUST-KG is an assistive KG-construction framework, not a
 clinical decision system.
+
+**De-identification handling.** The source notes are already de-identified per PhysioNet (MIMIC-III
+`[** … **]`, MIMIC-IV `___`, CORAL `*****`). On top of that, the graph builder scrubs every de-id
+placeholder out of the materialized KG — from entity/value labels as well as evidence/temporal spans,
+including truncated marker fragments and `Known lastname` / `hospitalN` remnants — replacing them with
+`REDACTED` (`src/graph/triple_normalizer.py`). The released `.ttl` graphs therefore carry **0 de-id
+markers** (verified per cohort). Any handoff of the DUA-restricted notes or derived KG stays on approved
+institutional infrastructure and is never placed on personal cloud or made public.
