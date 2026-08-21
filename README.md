@@ -303,6 +303,33 @@ lab-table fragments the gold annotates but aren't clean EAV entities.
 
 ---
 
+## Interactive research interface
+
+An interactive interface accompanies the pipeline for exploring the trust-admitted KG and its
+construction-time decisions. It runs on **local data with no external calls** and is **DUA-aware** —
+only aggregate, method-level views are shown here; per-patient views are gated (see note below).
+
+**Corpus dashboard** — evidence-support distribution, per-check validation pass rates, and co-occurring
+failure modes across all 17,577 CORAL assertions:
+
+![TRUST-KG corpus dashboard](figures/app_dashboard.png)
+
+**Selective admission** — the tunable operating point (Reject τL / Insert τH) with live Insert/Review/Reject
+rates and the risk–coverage curve, recomputed over the delivered graph:
+
+![TRUST-KG selective admission](figures/app_selective_admission.png)
+
+**Concept frequencies** — the most frequent extracted entities and attributes across both cohorts, with
+volume, support, and expert-agreement rate:
+
+![TRUST-KG concept frequencies](figures/app_concept_frequencies.png)
+
+> The **case-review** and **patient knowledge-graph** views (per-note narrative, evidence spans, per-patient
+> subgraphs) operate on **DUA-restricted CORAL records** and are **not shown here** — they run only on
+> approved, credentialed infrastructure. A live demo can be provided on request.
+
+---
+
 ## MIMIC oncology data
 
 Focused on **oncology patients** (to complement CORAL, not the general ICU population). `fetch_mimic_oncology.py`
