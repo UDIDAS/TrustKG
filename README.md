@@ -408,21 +408,6 @@ confidently *rejecting* it (vs demoting) is the case that motivates real termino
 
 ---
 
-## Status
-
-**Done** — all 6 draft tables filled with real numbers ([docs/PAPER_TABLES.md](docs/PAPER_TABLES.md)).
-- Extractor selected by full extractor-comparison sweep: **Gemma-4-E4B 2-pass anchor + Llama-3.2-3B / Qwen3-4B / MedGemma-4B** (all ≤5B); F1 0.879 / 0.890, with the Vanilla-RAG floor 0.787 / 0.805 → Table III.
-- Full 40-patient CORAL run, per cohort → Table III.
-- Construction-time validation, 5-layer mean scores (17,597 triples) → Table IV.
-- End-to-end KG materialization + SPARQL, **all 4 cohorts, trust-admitted** (98.99% admission; 1,093,879 RDF triples / 59,175 entities) → Table V.
-- Veracity: on the Gemma-4 ensemble — learned reliability near-perfectly calibrated (ECE 0.009 vs 0.172), clean TRAIN→VAL→TEST split; tunable admission gate (95%→auto-insert all, 99%→route 44% to review at 98.4% precision) → Table II.
-- MIMIC-III / MIMIC-IV: **full 4-model ensemble union via vLLM on all 800 notes** (seed gate passed at 92% source-grounding); scalability instrumented at 25/50/75/100% corpus fractions → Table VI.
-
-**Next**
-- Extend calibration + selective admission to MIMIC (needs gold labels). Distillation → future work.
-
----
-
 ## Data & ethics
 
 CORAL and MIMIC-III/IV are **credential-gated via PhysioNet** and governed by Data Use Agreements; the MIMIC
